@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+  Document   : domain-suffixes.xsd
+  Author     : Enis Soztutar - enis.soz.nutch@gmail.com
+  Description: This document is the schema for valid domain-suffixes
+  definitions. For successful parsing of domain-suffixes xml files, 
+  the xml file should be validated with this xsd. 
+  See        : org.apache.nutch.util.domain.DomainSuffixesReader.java
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="parse">
+          <!-- regex domain 
+          use this xpath with "url" regex
+          -->
+          <xs:complexType>
+            <xs:sequence>           
+              <xs:element name="fields" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="fieldname" type="xs:string" />
+                    <xs:element name="jsoupquery" type="xs:string" />
+
+                    
+                    <xs:element name="elastic">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="findintoelastic" type="xs:boolean" default="false" />
+                          <xs:element name="findUrlValue" type="xs:string" />
+                          <xs:element name="fieldName" type="xs:string" />
+                          <xs:element  name="elasticprocesstype">
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:enumeration value="processFieldJsoup" />
+                                <xs:enumeration value="setFieldValue" />
+                              </xs:restriction>
+                            </xs:simpleType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    
+                    <xs:element  name="returnType">
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="text" />
+                          <xs:enumeration value="html" />
+                          <xs:enumeration value="attr" />
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                    <xs:element name="attrname" type="xs:string" />
+
+                    <!-- trim,replace,split -->
+                    <xs:element  name="textProcess">
+                      <xs:complexType>
+                        <xs:sequence>
+
+                          <!-- trim-->
+                          <xs:element  name="trim" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="trimvalue" type="xs:string" />
+                                <xs:element  name="type">
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:enumeration value="left" />
+                                      <xs:enumeration value="right" />
+                                      <xs:enumeration value="both" />
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+
+                          <!-- replace-->
+                          <xs:element  name="replace" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="findstring" type="xs:string" />
+                                <xs:element name="val" type="xs:string" />
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+
+                          <!-- split (return an index of splitted array)-->
+                          <xs:element  name="split" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="splitvalue" type="xs:string" />
+                                <xs:element name="returnindex" type="xs:int" />
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+
+
+                        </xs:sequence>
+                      </xs:complexType>
+
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+
+
+            </xs:sequence>
+          </xs:complexType>
+  </xs:element>
+</xs:schema>

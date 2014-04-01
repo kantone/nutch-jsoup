@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="rules">
+
+    <xs:complexType>
+      <xs:sequence>
+
+        <!-- Elastic info -->
+        <xs:element name="elasticInfo">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="clusterName" type="xs:string" />
+              <xs:element name="hostNameOrIp" type="xs:string" default="localhost" />
+              <xs:element name="elasticPort" type="xs:int" default="9300" />
+              <xs:element name="index" type="xs:string" default="index" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="rule" maxOccurs="unbounded">
+
+    <!-- regex domain 
+          use this xpath with "url" regex
+          -->
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="urlcontain" type="xs:string" />
+              <xs:element name="file" type="xs:string" default="conf/file.xml" />
+              <xs:element name="addhtmlsourcefield" type="xs:boolean" default="1" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+
+  </xs:element>
+</xs:schema>

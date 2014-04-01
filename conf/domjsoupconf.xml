@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rules>
+    
+	<!-- elastic search connection info (optional) -->
+    <elasticInfo>	
+        <clusterName>elasticClusterName</clusterName>
+        <hostNameOrIp>localhost</hostNameOrIp>
+        <elasticPort>9300</elasticPort>
+		<!-- index where search -->
+        <index>index</index>
+    </elasticInfo>
+    
+	<!-- Rules
+	If url contains "urlcontain" value then load specific file (where there is settings for field extraction)
+	-->
+    <rule>
+        <urlcontain>http://stackoverflow.com</urlcontain>
+        <file>conf/domjsoup-stackoverflow.xml</file>    
+		<!-- true : add a field with html source -->
+        <addhtmlsourcefield>true</addhtmlsourcefield>    
+    </rule>
+
+	<!--
+	<rule>
+        <urlcontain>/urlcontain>
+        <file></file>    
+        <addhtmlsourcefield>true</addhtmlsourcefield>    
+    </rule>
+	-->
+    
+</rules>
