@@ -23,7 +23,6 @@ Intallation
 Configuration
 ----
 - Add "index-domsjoup" to your plugin.includes property in nutch-site.xml
-##### Example
 ```sh
 <property>
  <name>plugin.includes</name>
@@ -32,8 +31,7 @@ Configuration
 </property>
 ```
 - Edit conf/domjsoupconf.xml
-- Setup filter url where to apply precise data extraction.
-##### Add or edit rule a section
+- Setup filter url where to apply precise data extraction (add or edit rule a section)
 ```sh
 <rule>
     <!-- If url contains "urlcontain value" then use specific file for extract data "conf/domjsoup-github.xml" -->
