@@ -53,4 +53,8 @@ How to test
 You can test it using "indexchecker" COMMAND
 ```sh
 bin/nutch indexchecker http://yourUrl.html
+<<<<<<< HEAD
 ```
+=======
+```
+>>>>>>> e433e059d51fce0615ce8898cc3fd5daeb6f72ae
