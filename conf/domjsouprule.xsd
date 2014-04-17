@@ -63,6 +63,7 @@
                           <xs:enumeration value="text" />
                           <xs:enumeration value="html" />
                           <xs:enumeration value="attr" />
+                          <xs:enumeration value="count" />
                         </xs:restriction>
                       </xs:simpleType>
                     </xs:element>
@@ -101,16 +102,60 @@
                             </xs:complexType>
                           </xs:element>
 
-                          <!-- split (return an index of splitted array)-->
-                          <xs:element  name="split" maxOccurs="unbounded">
+                          <!-- split (return an index of splitted array)
+                          Multiple index Ex: a,b,c,d
+                          set multiple index and separator for return 
+                            <returnindex>0</returnindex>
+                            <returnindex>2</returnindex>
+                            <separator>|</separator>
+                            
+                            result a|c
+                          -->
+                          <xs:element  name="split">
                             <xs:complexType>
                               <xs:sequence>
                                 <xs:element name="splitvalue" type="xs:string" />
-                                <xs:element name="returnindex" type="xs:int" />
+                                <xs:element name="returnindex" type="xs:int" maxOccurs="unbounded" />
+                                <xs:element name="separator" type="xs:string" />
                               </xs:sequence>
                             </xs:complexType>
                           </xs:element>
 
+                          <!-- append -->
+                          <xs:element  name="append" maxOccurs="unbounded">
+                            <xs:complexType>
+                              <xs:sequence>                               
+                                <xs:element name="val" type="xs:string" />
+                                <xs:element  name="type">
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:enumeration value="before" />
+                                      <xs:enumeration value="after" />
+                                      <xs:enumeration value="both" />
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+
+                          <!-- substring -->
+                          <xs:element  name="substring">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="beginindex" type="xs:int" />
+                                <xs:element name="endindex" type="xs:int" />
+                                <xs:element  name="type">
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:enumeration value="beginindex" />
+                                      <xs:enumeration value="fromto" />                                      
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
 
                         </xs:sequence>
                       </xs:complexType>

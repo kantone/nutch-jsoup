@@ -37,8 +37,10 @@ import org.apache.nutch.indexer.IndexingFilter;
 import org.apache.nutch.indexer.NutchDocument;
 import org.apache.nutch.indexer.domjsoup.conf.Rules;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.Elastic;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Append;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Replace;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Split;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Substring;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Trim;
 import org.apache.nutch.storage.WebPage;
 import org.apache.nutch.storage.WebPage.Field;
@@ -75,19 +77,27 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
   private org.apache.nutch.indexer.domjsoup.conf.Rules.ElasticInfo elasticInfo = null;
   @Override
   public NutchDocument filter(NutchDocument doc, String url, WebPage page) throws IndexingException {
+	  
+	  try{
 	  URL u  = this.conf.getResource(conffileName);
 	  this.conffile = u.getPath();
-	 
+	  LOG.info("conf file : " + this.conffile);
 	  ByteBuffer k = page.getContent();
 	  String html = new String(k.array(),Charset.forName("UTF-8"));
 	  
-	  setXpathsRuleFile(url);
+	  setXpathsRuleFile(url);	 
 	  if(this.rule != null){
 		  
 		  if(this.rule.isAddhtmlsourcefield()){			
 			  doc.add("html", html);
 		  }
 		  
+		  if(this.parse == null){
+			  LOG.error("this.parse=null : cannot load xml rules");
+			  return doc;
+		  }
+		  
+		  LOG.info("Parse " + this.parse.getFields().size() + " fields");
 		  for (org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry : this.parse.getFields()) {
 			
 			  boolean processStandard = true;
@@ -132,6 +142,12 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 				  doc.add(entry.getFieldname(), val);
 			  }
 		  }
+	  }
+	  }
+	  catch(Exception ex){
+		  LOG.error(ex.getMessage());
+		  String stack = org.apache.commons.lang.exception.ExceptionUtils.getStackTrace(ex);
+		  LOG.error(stack);		 
 	  }
 	  
 	 
@@ -201,12 +217,49 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 			  }
 		  }
 		  
+		  //Substring
+		  Substring substr = textProcess.getSubstring();
+		  if(substr != null){
+			  if(substr.getType().equals("beginindex")){
+				  val = val.substring(substr.getBeginindex());
+			  }
+			  if(substr.getType().equals("fromto")){
+				  val = val.substring(substr.getBeginindex(),substr.getEndindex());
+			  }
+		  }
+		  
 		  //Split
-		  List<Split> split = textProcess.getSplit();
+		  Split split = textProcess.getSplit();
 		  if(split != null){
-			  for(Split s :  split){
-				  String[] vals = val.split(s.getSplitvalue());
-				  val = vals[s.getReturnindex()];
+			  
+			  String[] vals = val.split(split.getSplitvalue());
+			  if(split.getReturnindex() != null){
+				  //mulpiple values
+				  if(split.getReturnindex().size() > 1){	
+					  String val2 = "";
+					  for (int i : split.getReturnindex()) {
+						  val2 += vals[i] + split.getSeparator();
+					  }
+					  val = val2;
+				  }
+				  else{
+					  //single value
+					  int index = split.getReturnindex().get(0);
+					  val = vals[index];
+				  }
+			  }
+		  }		  
+		
+		  //append
+		  List<Append> append = textProcess.getAppend();
+		  if(append != null){
+			  for(Append a : append){
+				  if(a.getType().equals("before") || a.getType().equals("both")){
+					  val = a.getVal() + val;
+				  }
+				  if(a.getType().equals("after") || a.getType().equals("both")){
+					  val =  val + a.getVal();
+				  }
 			  }
 		  }
 		  
@@ -225,7 +278,9 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 				  }		 
 			  }
 		  }
+		  
 	  
+		  
 	  }
 	  return val;
   }
@@ -262,6 +317,7 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 	  try {
 		  File f = new File(conffile);
 		  if(f.exists()){
+			  LOG.info("Load " + conffile);
 			  JAXBContext jaxbContext = JAXBContext.newInstance(Rules.class);
 			  Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();		  
 			  Rules config = (Rules) jaxbUnmarshaller.unmarshal(f);
@@ -275,6 +331,7 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 				  if(url.contains(entry.getUrlcontain())){
 					  File f2 = new File(entry.getFile());
 					  if(f2.exists()){
+						  LOG.info("Loading " + entry.getFile());
 						  jaxbContext = JAXBContext.newInstance( org.apache.nutch.indexer.domjsoup.rule.Parse.class);
 						  jaxbUnmarshaller = jaxbContext.createUnmarshaller();		  
 						  this.parse = (org.apache.nutch.indexer.domjsoup.rule.Parse) jaxbUnmarshaller.unmarshal(f2);
