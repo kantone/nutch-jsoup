@@ -6,14 +6,59 @@
 	     <fieldname>viewcount</fieldname>
 		 <!-- css query -->
 	     <jsoupquery>#qinfo tr:nth-child(2) td:nth-child(2) p b</jsoupquery>
-		 <!-- Return type : text,html,attr -->
+		 <!-- Return type : 
+		 text : return text
+		 html : return html
+		 attr : return specific attribute (in <attraname>)
+		 count: return count of found tags
+		 static : return ever a static value ( <staticval>)
+		 -->
 	     <returnType>text</returnType>
+		 
 		 <!-- if Return type = attr set attrname (Es. "href","id",...) -->
 	     <attrname></attrname>
+		 
+		  <!-- if Return type = static return ever this value -->
+		 <staticval></staticval>
+		 
+		 <!-- check if value is equal or not equal and override to an stastic value before process text-->
+		 <!-- For e.g if val=1000 set val=thousand -->
+		 <equalcheckBeforeTextProcess>
+			<!-- equal,notequal !-->
+			<type>equal</type>
+			<valtocheck>1000</valtocheck>
+			<replaceval>thousand</replaceval>
+		 </equalcheckBeforeTextProcess>
+		 
+		 
+		 <!-- ElasticSearch extraction 
+		  Like this example  it is possible to fetch an other url previusly added into elasticsearch and add a specific field from query
+		  -->
+		 <fields>
+			  <fieldname>titleFromElastic</fieldname>
+			  <jsoupquery></jsoupquery>
+			  <elastic>
+				 <!-- true or false --> 
+				 <findintoelastic>1</findintoelastic>
+				 <!-- search by url valeu --> 
+				 <findUrlValue>http://url.html</findUrlValue>
+				 <!-- return a specific field --> 
+				 <fieldName>title</fieldName>
+				 
+				 <!-- setFieldValue,processFieldJsoup 
+				 setFieldValue : search by url and return a specific field value by "<fieldName>"
+				 processFieldJsoup : search by url and process the value with this file (override current page html)				 
+				 -->
+				 <elasticprocesstype>setFieldValue</elasticprocesstype>
+			 </elastic>
+			 <returnType>text</returnType><!-- text,html,attr -->
+			 <attrname></attrname>
+		 </fields>
+		 
 	     
 		 <!-- Post process text after -->
 	     <textProcess>
-			<!-- Trim data -->
+			<!-- Trim data (multiples) -->
 	         <trim>
 	             <trimvalue> </trimvalue>
 	             <type>right</type>
@@ -23,7 +68,7 @@
 	             <type>left</type><!-- left,right,both -->
 	         </trim>
 	         
-			 <!-- Replace Text -->
+			 <!-- Replace Text (multiples)-->
 	         <replace>
 	             <findstring>times</findstring>
 	             <val></val>
@@ -48,45 +93,42 @@
 	             <returnindex></returnindex>
 	         </split>
 	         -->
+			 
+			  <!-- Append value before,after or both -->
+			 <append>
+				<!--before,after,both -->
+				<type>both</type>
+				<val>--</val>
+			 </append>
+			 
+			 <!-- substring-->
+			 <substring>
+				<!--
+				beginindex : For eg. (beginindex=5) "This is a text"  => "is as text" (
+				fromTo : : For eg. (beginindex=0,endindex=4) "This is a text"  => "This"
+				-->
+				<type></type>
+				<beginindex>5</beginindex>
+				<endindex>10</endindex>
+			 </substring>
+			 
+			 <!-- perform regex match -->
+			 <regex></regex>
 	         
 	     </textProcess>
+		 
+		 
+		 <!-- check if value is equal or not equal and override to an stastic value after process text-->
+		 <!-- For e.g if val=1000 set val=thousand -->
+		 <equalcheckBeforeTextProcess>
+			<!-- equal,notequal !-->
+			<type>equal</type>
+			<valtocheck>1000</valtocheck>
+			<replaceval>thousand</replaceval>
+		 </equalcheckBeforeTextProcess>
+		 
      </fields>
      
-	  <!-- ElasticSearch extraction 
-	  Like this example  it is possible to fetch an other url previusly added into elasticsearch and add a specific field from query
-	  -->
-     <fields>
-          <fieldname>titleFromElastic</fieldname>
-	      <jsoupquery></jsoupquery>
-	      <elastic>
-	         <findintoelastic>1</findintoelastic>
-	         <findUrlValue>http://url.html</findUrlValue>
-	         <fieldName>title</fieldName>
-			 <!-- setFieldValue or processFieldJsoup -->
-	         <elasticprocesstype>setFieldValue</elasticprocesstype>
-	     </elastic>
-	     <returnType>text</returnType><!-- text,html,attr -->
-	     <attrname></attrname>
-     </fields>
-	 
-	  <!-- ElasticSearch extraction 
-	  Like this example  it is possible to fetch an other url previusly added into elasticsearch and parse value with jsoup
-	  
-	  -->
-     <fields>
-          <fieldname>viewcount</fieldname>
-	      <jsoupquery>#qinfo tr:nth-child(2) td:nth-child(2) p b</jsoupquery>
-	      <elastic>
-	         <findintoelastic>1</findintoelastic>
-	         <findUrlValue>http://url.html</findUrlValue>
-			 <!-- For e.g you can load url "http://url.html" from elasticSearch and parse the field html with jsoupquery  -->
-	         <fieldName>html</fieldName>
-			 <!-- setFieldValue or processFieldJsoup -->
-	         <elasticprocesstype>processFieldJsoup</elasticprocesstype>
-	     </elastic>
-	     <returnType>text</returnType><!-- text,html,attr -->
-	     <attrname></attrname>
-     </fields>
      
  </parse>
     

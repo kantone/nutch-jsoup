@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -36,6 +38,7 @@ import org.apache.nutch.indexer.IndexingException;
 import org.apache.nutch.indexer.IndexingFilter;
 import org.apache.nutch.indexer.NutchDocument;
 import org.apache.nutch.indexer.domjsoup.conf.Rules;
+import org.apache.nutch.indexer.domjsoup.rule.Equalcheck;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.Elastic;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Append;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Replace;
@@ -60,6 +63,7 @@ import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
  * Jsoup dom extractor field extractor for nutch
  * 
@@ -78,6 +82,7 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
   @Override
   public NutchDocument filter(NutchDocument doc, String url, WebPage page) throws IndexingException {
 	  
+
 	  try{
 	  URL u  = this.conf.getResource(conffileName);
 	  this.conffile = u.getPath();
@@ -204,10 +209,31 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 		  val = el.html();
 	  else if (rule.getReturnType().equals("attr"))
 		  val = el.attr(rule.getAttrname());
+	  else if (rule.getReturnType().equals("count"))
+		  val = String.valueOf(el.size());
+	  else if(rule.getReturnType().equals("static")){
+		  return rule.getStaticval();
+	  }
+	  
+	 
+	  //override val by equalcheck	
+	  if(rule.getEqualcheckBeforeTextProcess() != null){
+		  val = this.equalNotEqualCheck(val,rule.getEqualcheckBeforeTextProcess());
+	  }
+	 
 	  
 	  org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess =  rule.getTextProcess();	  
 	  if(textProcess != null){
-		  //remove lines?
+		 
+		  //regex
+		  if(textProcess.getRegex() != null){
+			  if(!textProcess.getRegex().equals("")){
+				  Pattern pattern = Pattern.compile(textProcess.getRegex());
+				  Matcher match = pattern.matcher(val);
+				  match.find();
+				  val = match.group();
+			  }
+		  }
 		  
 		  //Replace
 		  List<Replace> repl = textProcess.getReplace();
@@ -279,9 +305,33 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 			  }
 		  }
 		  
-	  
-		  
 	  }
+	  
+	  
+	  if(rule.getEqualcheckAfterTextProcess() != null){
+		  val = this.equalNotEqualCheck(val,rule.getEqualcheckAfterTextProcess());
+	  }
+	  
+	  return val;
+  }
+  
+ /**
+  * Override value if equal or not
+  * @param val
+  * @param e
+  * @return
+  */
+private String equalNotEqualCheck(String val,Equalcheck e){	
+	  if(e.getType().equals("equal")){
+		  if(val.equals(e.getValtocheck())){
+			  val = e.getReplaceval();
+		  }
+	  }
+	  else if (e.getType().equals("notequal")){
+		  if(!val.equals(e.getValtocheck())){
+			  val = e.getReplaceval();
+		  }
+	  }	 
 	  return val;
   }
   

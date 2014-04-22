@@ -26,6 +26,8 @@
       <library name="index-domjsoup.jar">
          <export name="*"/>
       </library>
+	  <library name="jsoup-1.7.3.jar"/>
+	  <library name="tagsoup-1.2.jar"/>
    </runtime>
 
    <requires>
