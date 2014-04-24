@@ -19,7 +19,6 @@ Intallation
 1. Copy "plugin/index-domsjoup" under plugin directory
 2. Copy "conf/domjsoupconf.xml" under conf directory
 3. Copy and edit "conf/example.xml" under conf directory
-4. Put in nutch "bin" directory tagsoup-1.2.jar and jsoup-1.7.3.jar
 
 
 Configuration
