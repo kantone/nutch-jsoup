@@ -36,8 +36,27 @@
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="fieldname" type="xs:string" />
-                    <xs:element name="jsoupquery" type="xs:string" />
 
+                    <!-- can be multiple with | separator like "jssoupquery1|jssoupquery2 (first value found that is not nothing will be processed) -->
+                    <xs:element name="jsoupquery" type="xs:string" />
+                    
+                    <!-- extract data from url using textProcess and bybass jsoup query -->
+                    <xs:element name="processingUrl" type="xs:boolean" default="false" />
+
+                    <!-- if nothig was found with jsoup it's possible to add custom value -->
+                    <xs:element  name="nothingFoundAction">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="setcustomVal" type="xs:boolean" />
+                          <xs:element name="customVal" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+
+                    <xs:element name="isMultiple" type="xs:boolean" default="false" />
+                    
+                    <xs:element name="equalcheckBeforeTextProcess" type="equalcheck" />              
+                                
                     
                     <xs:element name="elastic">
                       <xs:complexType>
@@ -64,10 +83,13 @@
                           <xs:enumeration value="html" />
                           <xs:enumeration value="attr" />
                           <xs:enumeration value="count" />
+                          <xs:enumeration value="static" />
                         </xs:restriction>
                       </xs:simpleType>
                     </xs:element>
                     <xs:element name="attrname" type="xs:string" />
+                    <xs:element name="staticval" type="xs:string" />
+                    <xs:element name="multipleSeparator" type="xs:string"  default="|"/>
 
                     <!-- trim,replace,split -->
                     <xs:element  name="textProcess">
@@ -111,12 +133,21 @@
                             
                             result a|c
                           -->
-                          <xs:element  name="split">
+                          <xs:element  name="split" maxOccurs="unbounded">
                             <xs:complexType>
                               <xs:sequence>
                                 <xs:element name="splitvalue" type="xs:string" />
                                 <xs:element name="returnindex" type="xs:int" maxOccurs="unbounded" />
                                 <xs:element name="separator" type="xs:string" />
+                                <xs:element  name="type" default="index">
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:enumeration value="index" />
+                                      <xs:enumeration value="first" />
+                                      <xs:enumeration value="last" />
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
                               </xs:sequence>
                             </xs:complexType>
                           </xs:element>
@@ -157,10 +188,75 @@
                             </xs:complexType>
                           </xs:element>
 
+                          <!-- regex -->
+                          <xs:element  name="regex" type="xs:string" />                         
+
+                          <!-- percent calculate from extracted value (for. eg extracted 4 on totalValue=10 = 40% -->
+                          <xs:element  name="percentCalculate">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="appendPercentValue" type="xs:boolean" />
+                                <xs:element name="totalValue" type="xs:int" />
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          
+                          <!-- contains (if contains a value set a custom value)-->
+                          <xs:element  name="contains">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="containValue" type="xs:string" />
+                                <xs:element name="customValue" type="xs:string" />
+                                <xs:element name="caseInsensitive" type="xs:boolean" default="false" />
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          
+                          <!-- Date Pattern is : "M/d/y k:m:s" -->
+                          <xs:element  name="datePattern">
+                            <xs:complexType>
+                              <xs:sequence>                                
+                                <xs:element name="dateFormat" type="xs:string"  default="M/d/y k:m:s"/>
+                                <xs:element name="separator" type="xs:string"  default=" "/>
+                                <!-- splitPattern : split a string and set for a specific index java date type 
+                                                    http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html
+                                                    for e.g 6 days, 23 hours, may
+                                                            index => 0 => 6 as d
+                                                            index => 2 => 23 as k
+                                                            index => 4 => may as M                                                    
+                                     splitPatternFromNow : add date from now (for. eg 6 days, 23 hours left)                                    
+                                            -->
+                                <xs:element  name="type">
+                                  <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                      <xs:enumeration value="splitPatternFromNow" />
+                                      <xs:enumeration value="splitPattern" />
+                                    </xs:restriction>
+                                  </xs:simpleType>
+                                </xs:element>
+
+                                <xs:element  name="indexDef" maxOccurs="unbounded">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="index" type="xs:int"/>
+                                      <!-- Avaiable values = M,D,y,k,m!--> 
+                                      <xs:element name="dateLetter" type="xs:string"/>
+                                    </xs:sequence>
+                                  </xs:complexType>
+                                </xs:element>
+
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                          
+                          
                         </xs:sequence>
                       </xs:complexType>
 
                     </xs:element>
+
+                    <xs:element name="equalcheckAfterTextProcess" type="equalcheck" />
+
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>
@@ -169,5 +265,24 @@
 
             </xs:sequence>
           </xs:complexType>
+
+   
   </xs:element>
+
+  <xs:complexType  name="equalcheck">
+    <xs:sequence>
+      <xs:element name="valtocheck" type="xs:string" />
+      <xs:element name="replaceval" type="xs:string" />
+      <xs:element  name="type">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="equal" />
+            <xs:enumeration value="notequal" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+
 </xs:schema>

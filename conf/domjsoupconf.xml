@@ -1,31 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rules>
     
-	<!-- elastic search connection info (optional) -->
-    <elasticInfo>	
-        <clusterName>elasticClusterName</clusterName>
-        <hostNameOrIp>localhost</hostNameOrIp>
+    <elasticInfo>
+        <clusterName>es1</clusterName>
+        <hostNameOrIp>192.168.81.133</hostNameOrIp>
         <elasticPort>9300</elasticPort>
-		<!-- index where search -->
         <index>index</index>
     </elasticInfo>
     
-	<!-- Rules
-	If url contains "urlcontain" value then load specific file (where there is settings for field extraction)
-	-->
     <rule>
         <urlcontain>http://stackoverflow.com</urlcontain>
-        <file>conf/domjsoup-stackoverflow.xml</file>    
-		<!-- true : add a field with html source -->
-        <addhtmlsourcefield>true</addhtmlsourcefield>    
+        <file>conf/domjsoup-stackoverflow-test.xml</file>    
+        <addhtmlsourcefield>false</addhtmlsourcefield>    
     </rule>
-
-	<!--
-	<rule>
-        <urlcontain>/urlcontain>
-        <file></file>    
-        <addhtmlsourcefield>true</addhtmlsourcefield>    
+    
+     <rule>
+        <urlcontain>http://www.freelancer.com</urlcontain>
+        <file>conf/freelancer.xml</file>    
+        <addhtmlsourcefield>false</addhtmlsourcefield>    
     </rule>
-	-->
+     <rule>
+        <urlcontain>http://nj</urlcontain>
+        <file>conf/freelancer.xml</file>    
+        <addhtmlsourcefield>false</addhtmlsourcefield>    
+    </rule>
+    
+    <!-- 
+     <xpath>
+        <urlcontain>http://stackoverflow.com</urlcontain>
+        <file>conf/file.xml</file>        
+    </xpath>
+     -->
     
 </rules>

@@ -1,135 +1,156 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
  <parse>
-     <fields>
-		 <!-- Field name -->
-	     <fieldname>viewcount</fieldname>
-		 <!-- css query -->
-	     <jsoupquery>#qinfo tr:nth-child(2) td:nth-child(2) p b</jsoupquery>
-		 <!-- Return type : 
-		 text : return text
-		 html : return html
-		 attr : return specific attribute (in <attraname>)
-		 count: return count of found tags
-		 static : return ever a static value ( <staticval>)
-		 -->
-	     <returnType>text</returnType>
-		 
-		 <!-- if Return type = attr set attrname (Es. "href","id",...) -->
-	     <attrname></attrname>
-		 
-		  <!-- if Return type = static return ever this value -->
-		 <staticval></staticval>
-		 
-		 <!-- check if value is equal or not equal and override to an stastic value before process text-->
-		 <!-- For e.g if val=1000 set val=thousand -->
-		 <equalcheckBeforeTextProcess>
-			<!-- equal,notequal !-->
-			<type>equal</type>
-			<valtocheck>1000</valtocheck>
-			<replaceval>thousand</replaceval>
-		 </equalcheckBeforeTextProcess>
-		 
-		 
-		 <!-- ElasticSearch extraction 
-		  Like this example  it is possible to fetch an other url previusly added into elasticsearch and add a specific field from query
-		  -->
-		 <fields>
-			  <fieldname>titleFromElastic</fieldname>
-			  <jsoupquery></jsoupquery>
-			  <elastic>
-				 <!-- true or false --> 
-				 <findintoelastic>1</findintoelastic>
-				 <!-- search by url valeu --> 
-				 <findUrlValue>http://url.html</findUrlValue>
-				 <!-- return a specific field --> 
-				 <fieldName>title</fieldName>
-				 
-				 <!-- setFieldValue,processFieldJsoup 
-				 setFieldValue : search by url and return a specific field value by "<fieldName>"
-				 processFieldJsoup : search by url and process the value with this file (override current page html)				 
-				 -->
-				 <elasticprocesstype>setFieldValue</elasticprocesstype>
-			 </elastic>
-			 <returnType>text</returnType><!-- text,html,attr -->
-			 <attrname></attrname>
-		 </fields>
-		 
+     <fields>		
+	     <fieldname>jID</fieldname>	
+       <jsoupquery>#qinfo tr:nth-child(2) td:nth-child(2) p b</jsoupquery>
+
+       <!-- set if process url text instead of use jsoup query-->
+       <processingUrl>false</processingUrl>
+
+       <!-- set custom value if nothing is found-->
+       <nothingFoundAction>
+         <setcustomVal>false</setcustomVal>
+         <customVal>NA</customVal>
+       </nothingFoundAction>
+
+       <!-- if=true process each element found and join text with separator(multipleSeparator) -->
+       <!-- 
+       <isMultiple>false</isMultiple>
+       <multipleSeparator></multipleSeparator>-->
+       
+       <!-- <equalcheckBeforeTextProcess></equalcheckBeforeTextProcess> -->
+
+       <!-- text,html,attr,count,static-->
+       <returnType>text</returnType>
+       
+       <!-- query into elastic-->
+       <elastic>
+         <findintoelastic>false</findintoelastic>
+         <findUrlValue></findUrlValue>
+         <fieldName></fieldName>
+         <!--processFieldJsoup or setFieldValue-->
+         <elasticprocesstype>processFieldJsoup</elasticprocesstype> 
+       </elastic>
+
+       <!-- if Return type = static return ever this value -->
+       <attrname></attrname>
+
+       <!-- if Return type = static return ever this value -->
+       <staticval></staticval>
 	     
-		 <!-- Post process text after -->
+		   <!-- Post process text after exectute jsoup query -->
 	     <textProcess>
-			<!-- Trim data (multiples) -->
-	         <trim>
-	             <trimvalue> </trimvalue>
-	             <type>right</type>
-	         </trim>
-	          <trim>
-	             <trimvalue>1</trimvalue>
-	             <type>left</type><!-- left,right,both -->
-	         </trim>
-	         
-			 <!-- Replace Text (multiples)-->
-	         <replace>
-	             <findstring>times</findstring>
-	             <val></val>
-	         </replace>
-	         
-	         <!--  
+
+           <!-- It's possible to add more then 1 <trim></trim>
+                trim type(left,right,both) -->
+	         <trim><trimvalue> </trimvalue><type>both</type></trim>
+
+           <!-- It's possible to add more then 1 <replace></replace> -->
+			     <!-- Replace Text (multiples)-->
+           <!--
 	         <replace>
 	             <findstring></findstring>
 	             <val></val>
-	         </replace>
-	         <replace>
-	             <findstring></findstring>
-	             <val></val>
-	         </replace>
-	         -->
-			 
-			 <!-- Split : split string and get a specific index 
-			 (Example split string "a,b,c,d,e" with splitvalue=',' and get returnindex=2 return "b" -->
-	          <!--  
+	         </replace>-->
+
+
+         <!-- split (return an index of splitted array)
+                          Multiple index Ex: a,b,c,d
+                          set multiple index and separator for return 
+                            <returnindex>0</returnindex>
+                            <returnindex>2</returnindex>
+                            <separator>|</separator>
+                            
+                            result a|c
+                          -->
+         <!-- 
 	         <split>
 	             <splitvalue></splitvalue>
 	             <returnindex></returnindex>
+               <separator></separator>
 	         </split>
 	         -->
-			 
-			  <!-- Append value before,after or both -->
-			 <append>
-				<!--before,after,both -->
+
+       <!-- It's possible to add more then 1 <append></append> -->
+			 <!-- Append value before,after or both -->
+       <!--
+			 <append>				
 				<type>both</type>
-				<val>--</val>
+				<val></val>
 			 </append>
-			 
-			 <!-- substring-->
-			 <substring>
-				<!--
+        -->
+			
+				<!-- substring
+        type : beginindex,fromTo
 				beginindex : For eg. (beginindex=5) "This is a text"  => "is as text" (
 				fromTo : : For eg. (beginindex=0,endindex=4) "This is a text"  => "This"
 				-->
-				<type></type>
+         <!--
+       <substring>
+				<type>fromTo</type>
 				<beginindex>5</beginindex>
 				<endindex>10</endindex>
 			 </substring>
+       -->
 			 
 			 <!-- perform regex match -->
+       
 			 <regex></regex>
-	         
+
+         <!-- caclulate percent value (for. eg extracted 4 on totalValue=10 = 40%)  -->
+         <!--
+         <percentCalculate>
+           <appendPercentValue>true</appendPercentValue>
+           <totalValue>10</totalValue>
+         </percentCalculate>
+         !-->
+         
+         <!-- if Contain a value replace with custom value -->
+         <!--
+         <contains>
+           <containValue>myValue</containValue>
+           <customValue>newValue</customValue>
+           <caseInsensitive>false</caseInsensitive>
+         </contains>
+         -->
+
+         <!--date pattern conversion avaiable terms "M,d,y,k,m,s"
+         For e.g "6 days, 23 hours left"
+         -->
+         <!--
+         <datePattern>
+           <dateFormat>M/d/y k:m:s</dateFormat>
+           <separator> </separator>
+           <type>splitPatternFromNow</type>
+           
+           <indexDef>
+             <index>0</index>
+             <dateLetter>d</dateLetter>
+           </indexDef>
+
+           <indexDef>
+             <index>2</index>
+             <dateLetter>k</dateLetter>
+           </indexDef>
+           
+         </datePattern>
+          -->
 	     </textProcess>
 		 
 		 
 		 <!-- check if value is equal or not equal and override to an stastic value after process text-->
 		 <!-- For e.g if val=1000 set val=thousand -->
-		 <equalcheckBeforeTextProcess>
-			<!-- equal,notequal !-->
+     <!-- Type : equal,notequal !-->
+     <!-- 
+     <equalcheckAfterTextProcess>		
 			<type>equal</type>
 			<valtocheck>1000</valtocheck>
 			<replaceval>thousand</replaceval>
-		 </equalcheckBeforeTextProcess>
-		 
+		 </equalcheckAfterTextProcess>
+		 -->
      </fields>
      
      
  </parse>
     
-

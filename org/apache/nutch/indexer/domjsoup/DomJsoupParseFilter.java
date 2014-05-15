@@ -4,7 +4,9 @@ import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -19,6 +21,10 @@ import org.apache.nutch.indexer.domjsoup.conf.Rules;
 import org.apache.nutch.indexer.domjsoup.rule.Equalcheck;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.Elastic;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Append;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Contains;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.DatePattern;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.DatePattern.IndexDef;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.PercentCalculate;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Replace;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Split;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Substring;
@@ -39,11 +45,14 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
+
+import com.ibm.icu.text.SimpleDateFormat;
 
 
 /**
@@ -61,6 +70,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	private org.apache.nutch.indexer.domjsoup.rule.Parse parse  = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.Rule rule = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.ElasticInfo elasticInfo = null;
+	
 	
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
@@ -85,8 +95,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  }
 			 
 			 
-			  if(!k.equals(null)){
-				  //String html = new String(k.array());
+			  if(!k.equals(null)){				 
 				  String html = new String(k.array(),Charset.forName("UTF-8"));
 				  
 				  setXpathsRuleFile(url);	 
@@ -106,7 +115,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 						
 						  boolean processStandard = true;
 						  
-						  //ElasticCase
+						  //ElasticCase						  
 						  Elastic elastic = entry.getElastic();
 						  if(elastic != null){
 							  if(elastic.isFindintoelastic()){
@@ -125,7 +134,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 										  String val = "";
 										  Elements el = this.parse(htmlFromElastic, entry.getJsoupquery());
 										  if(el != null){
-											  val= parseRule(el,entry);
+											  val= parseRule(el,entry,false,"");
 										  }
 										  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
 									  }
@@ -136,13 +145,53 @@ public class DomJsoupParseFilter implements ParseFilter {
 								  }
 							  }
 						  }
+						
 						  
 						  if(processStandard){
 							  String val = "";
-							  Elements el = this.parse(html, entry.getJsoupquery());
-							  if(!el.equals(null)){
-								  val= parseRule(el,entry);
+							  
+							  //Processing url not perfrom jsoup
+							  if(entry.isProcessingUrl()){
+								  val= parseRule(null,entry,true,url);
 							  }
+							  else{
+								  //Jsoup processing
+								  if(entry.getReturnType().equals("static"))
+									  val = entry.getStaticval();
+								  else {	
+									  if(!entry.getJsoupquery().equals("")){
+										  String[] jsoups;
+										  if(entry.getJsoupquery().contains("|"))
+											  jsoups = entry.getJsoupquery().split("|");
+										  else jsoups = new String[1];
+										  jsoups[0] = entry.getJsoupquery();
+										  
+										  //for each query defined perform query and process Text of first query that return not null Element
+										  for(int i=0;i<jsoups.length;i++){
+											  Elements el = this.parse(html,jsoups[i]);
+											  if(el != null){
+												  
+												  if(entry.isIsMultiple()){													 
+													  val= multipleExecution(el,entry,val);
+												  }
+												  else{
+													  val= parseRule(el,entry,false,"");
+												  }		
+												  break;
+											  }
+										  }	
+									  }
+								  }
+							  }
+							  
+							  //set default custom value if Empty
+							  if(entry.getNothingFoundAction() != null){								 
+								  if(entry.getNothingFoundAction().isSetcustomVal()){
+									  val = entry.getNothingFoundAction().getCustomVal();
+								  }								 
+							  }
+							  
+							  //add field
 							  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));							  
 						  }
 					  }
@@ -164,6 +213,29 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  }	
 		
 		return parse;
+	}
+		
+	
+	/**
+	 * Execute the rule foreach element find joining it into a string with separator
+	 * @param el
+	 * @param entry
+	 * @param val
+	 * @return
+	 */
+	private String multipleExecution(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry,String val){
+		 for (Element element : el) {	
+			  String txt = element.text();
+			  
+			  if(entry.getReturnType().equals("html"))
+				  txt = element.html();
+			  
+			  if(entry.getReturnType().equals("attr"))
+				  txt = element.attr(entry.getAttrname());
+			  
+			  val= val + parseRule(null,entry,true,txt) + entry.getMultipleSeparator();
+		  }
+		 return val;
 	}
 	
 	/**
@@ -215,20 +287,24 @@ public class DomJsoupParseFilter implements ParseFilter {
 	   * @param rule
 	   * @return
 	   */
-	  private String parseRule(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule){	  
+	  private String parseRule(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule,Boolean useText,String text){	  
 		  String val = "";
 		  
-		  //set value
-		  if(rule.getReturnType().equals("text"))
-			  val = el.text();
-		  else if (rule.getReturnType().equals("html"))
-			  val = el.html();
-		  else if (rule.getReturnType().equals("attr"))
-			  val = el.attr(rule.getAttrname());
-		  else if (rule.getReturnType().equals("count"))
-			  val = String.valueOf(el.size());
-		  else if(rule.getReturnType().equals("static")){
-			  return rule.getStaticval();
+		  if(useText.equals(false)){
+			  //set value
+			  if(rule.getReturnType().equals("text"))
+				  val = el.text();
+			  else if (rule.getReturnType().equals("html"))
+				  val = el.html();
+			  else if (rule.getReturnType().equals("attr"))
+				  val = el.attr(rule.getAttrname());
+			  else if (rule.getReturnType().equals("count"))
+				  val = String.valueOf(el.size());
+			  
+			
+		  }
+		  else{
+			  val = text;
 		  }
 		  
 		 
@@ -251,6 +327,21 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  }
 			  }
 			  
+			  //Contains
+			  Contains cont = textProcess.getContains();
+			  if(cont != null){				  
+				  if(cont.isCaseInsensitive()){
+					  if(val.toLowerCase().contains(cont.getContainValue().toLowerCase())){
+						  val = cont.getCustomValue();
+					  }
+				  }
+				  else {
+					  if(val.contains(cont.getContainValue())){
+						  val = cont.getCustomValue();
+					  }
+				  }
+			  }
+			  
 			  //Replace
 			  List<Replace> repl = textProcess.getReplace();
 			  if(repl != null){
@@ -262,41 +353,17 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  //Substring
 			  Substring substr = textProcess.getSubstring();
 			  if(substr != null){
-				  if(substr.getType().equals("beginindex")){
+				  if(substr.getType().toLowerCase().equals("beginindex")){
 					  val = val.substring(substr.getBeginindex());
 				  }
-				  if(substr.getType().equals("fromto")){
+				  if(substr.getType().toLowerCase().equals("fromto")){
 					  val = val.substring(substr.getBeginindex(),substr.getEndindex());
 				  }
 			  }
 			  
 			  //Split
-			  try{
-				  Split split = textProcess.getSplit();
-				  if(split != null){
-					  
-					  String[] vals = val.split(split.getSplitvalue());
-					  if(split.getReturnindex() != null){
-						  //mulpiple values
-						  if(split.getReturnindex().size() > 1){	
-							  String val2 = "";
-							  for (int i : split.getReturnindex()) {
-								  val2 += vals[i] + split.getSeparator();
-							  }
-							  val = val2;
-						  }
-						  else{
-							  //single value
-							  int index = split.getReturnindex().get(0);
-							  val = vals[index];
-						  }
-					  }
-				  }		
-			  }
-			  catch(Exception ex){
-				  LOG.error(ex.getMessage());
-			  }
-			
+			  val = split(val,textProcess);
+			  
 			  //append
 			  List<Append> append = textProcess.getAppend();
 			  if(append != null){
@@ -308,9 +375,29 @@ public class DomJsoupParseFilter implements ParseFilter {
 						  val =  val + a.getVal();
 					  }
 				  }
+			  }		  
+			  
+			  
+			  //percentCalculator
+			  PercentCalculate percent = textProcess.getPercentCalculate();
+			  if(percent != null){
+				  try{
+					  int val2 = Integer.parseInt(val);
+					  int res = (100 * val2)/percent.getTotalValue();
+					  val = String.valueOf(res);
+				  }
+				  catch(Exception e){
+					  LOG.error(e.getMessage() + " " + e.getStackTrace());
+				  }
+				  
+				  if(percent.isAppendPercentValue()){
+					  val = val + "%";
+				  }
 			  }
 			  
-			//post process text
+			  //Date Pattern
+			  val = datePattern(val,textProcess);
+			  			
 			  //Trim
 			  List<Trim> trim = textProcess.getTrim();
 			  if(trim != null){
@@ -336,13 +423,166 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  return val;
 	  }
 	  
+	  /**
+	   * Execute date convertion pattern
+	   * @param val
+	   * @param textProcess
+	   * @return
+	   */
+	  private String datePattern(String val, org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess){
+		  DatePattern dtp = textProcess.getDatePattern();
+		  if(dtp != null && !val.equals("")){
+			  String d="";
+			  String M = "";
+			  String y = "";
+			  String k= "";
+			  String m ="";
+			  String s ="";
+			  try{
+				  String[] explode = val.split(dtp.getSeparator());
+				  for (IndexDef def : dtp.getIndexDef()) {
+					String p = explode[def.getIndex()];
+					String letter = def.getDateLetter();
+					if(letter.equals("d"))
+						d = p;
+					else if(letter.equals("y"))
+						y = p;
+					else if(letter.equals("M"))
+						M = p;
+					else if(letter.equals("k"))
+						k = p;
+					else if(letter.equals("m"))
+						m = p;
+					else if(letter.equals("s"))
+						s = p;
+				  }
+				  
+				  
+				  SimpleDateFormat dt = new SimpleDateFormat(dtp.getDateFormat());				  
+				  if(dtp.getType().equals("splitPattern")){
+					  
+					  //set defaults
+					  if(d.equals(""))
+						  d = "1";
+					  if(M.equals(""))
+						  M = "1";
+					  if(y.equals(""))
+						  y = "1970";
+					  if(d.equals(""))
+						  k = "00";
+					  if(d.equals(""))
+						  m = "00";
+					  if(d.equals(""))
+						  s = "00";
+					  
+					  GregorianCalendar gr = new GregorianCalendar(Integer.parseInt(y),Integer.parseInt(M),Integer.parseInt(d),Integer.parseInt(k),Integer.parseInt(m),Integer.parseInt(s));
+					  val = dt.format(gr.getTime());
+				  }
+				  else if(dtp.getType().equals("splitPatternFromNow")){
+					  Calendar gr =  GregorianCalendar.getInstance();
+					  
+					  //set defaults
+					  if(d.equals(""))
+						  d = "0";
+					  if(M.equals(""))
+						  M = "0";
+					  if(y.equals(""))
+						  y = "0";
+					  if(d.equals(""))
+						  k = "0";
+					  if(d.equals(""))
+						  m = "0";
+					  if(d.equals(""))
+						  s = "0";
+					  
+					  if(!d.equals(""))
+						  gr.add(Calendar.DAY_OF_MONTH,Integer.parseInt(d));
+					  
+					  if(!M.equals(""))
+						  gr.add(Calendar.MONTH,Integer.parseInt(M));
+					  
+					  if(!y.equals(""))
+						  gr.add(Calendar.YEAR,Integer.parseInt(y));
+					  
+					  if(!k.equals(""))
+						  gr.add(Calendar.HOUR,Integer.parseInt(k));
+					  
+					  if(!m.equals(""))
+						  gr.add(Calendar.MINUTE,Integer.parseInt(m));
+					  
+					  if(!s.equals(""))
+						  gr.add(Calendar.SECOND,Integer.parseInt(s));
+					  						
+					  val =  dt.format(gr.getTime());
+				  }
+				  
+				
+			  }
+			  catch(Exception e){
+				  LOG.error(e.getMessage() + " " + e.getStackTrace());
+				  val = "";
+			  }
+		  }
+		  return val;
+	  }
+	  
+	  /**
+	   * Split rule
+	   * @param val
+	   * @param textProcess
+	   * @return
+	   */
+	  private String split(String val, org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess){
+		  try{
+			  List<Split> splits = textProcess.getSplit();
+			  for (Split split : splits) {
+				  if(split != null){
+					  
+					  if(!val.equals("")){
+						  String[] vals = val.split(split.getSplitvalue());
+						  
+						  if(split.getType().equals("first")){
+							  val = vals[0];
+						  }
+						  if(split.getType().equals("last")){
+							  val = vals[vals.length-1];
+						  }
+						  if(split.getType().equals("index")){						  
+						  
+							  
+							  if(split.getReturnindex() != null){
+								  //mulpiple values
+								  if(split.getReturnindex().size() > 1){	
+									  String val2 = "";
+									  for (int i : split.getReturnindex()) {
+										  val2 += vals[i] + split.getSeparator();
+									  }
+									  val = val2;
+								  }
+								  else {
+									  //single value
+									  int index = split.getReturnindex().get(0);
+									  val = vals[index];
+								  }
+							  }
+						  }
+					  }
+				  }
+			  }
+		  }
+		  catch(Exception ex){
+			  LOG.error(ex.getMessage());
+		  }
+		  return val;
+	  }
+	  
 	 /**
 	  * Override value if equal or not
 	  * @param val
 	  * @param e
 	  * @return
 	  */
-	private String equalNotEqualCheck(String val,Equalcheck e){	
+	  private String equalNotEqualCheck(String val,Equalcheck e){	
 		  if(e.getType().equals("equal")){
 			  if(val.equals(e.getValtocheck())){
 				  val = e.getReplaceval();
@@ -362,16 +602,19 @@ public class DomJsoupParseFilter implements ParseFilter {
 	   * @param html
 	   */
 	  private Elements parse(String html,String query){
-			//My Xpath
-			  
+		  					  
 			    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			    factory.setNamespaceAware(false);
 			    factory.setValidating(false);
 			    try {	    		
 			    	
-			    	org.jsoup.nodes.Document doc2  = Jsoup.parse(html);		    	
-			    	Elements viewedEl = doc2.select(query);
-			    	return viewedEl;
+			    	org.jsoup.nodes.Document doc2  = Jsoup.parse(html);		  
+			    	if(!query.equals("")){
+			    		Elements viewedEl = doc2.select(query);	
+			    		return viewedEl;
+			    	}
+			    	else return null;
+			    	
 				} 
 				catch (Exception e) {
 					e.printStackTrace();
@@ -379,7 +622,8 @@ public class DomJsoupParseFilter implements ParseFilter {
 				}
 			  
 		  }
-
+	  
+	
 	  /**
 	   * Read global xpath configuration file and return the right xpath rules xml files by url contains filter
 	   * @return
@@ -421,6 +665,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  
 
 		} catch (JAXBException e) {
+			LOG.error(e.getMessage());
 			e.printStackTrace();
 			return;
 		}	  
