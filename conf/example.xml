@@ -21,9 +21,18 @@
        
        <!-- <equalcheckBeforeTextProcess></equalcheckBeforeTextProcess> -->
 
-       <!-- text,html,attr,count,static-->
+       <!-- text,html,attr,count,static,array,joinfields-->
        <returnType>text</returnType>
-       
+
+       <!-- Join 2 fields (return type = joinfields )  -->
+       <!--
+       <joinfields>
+         <fieldName>title</fieldName>
+         <fieldName>tag</fieldName>
+         <separator>,</separator>
+       </joinfields>
+        -->
+
        <!-- query into elastic-->
        <elastic>
          <findintoelastic>false</findintoelastic>
@@ -38,6 +47,9 @@
 
        <!-- if Return type = static return ever this value -->
        <staticval></staticval>
+
+       <!-- if Return type = array set the separator of fetched string to generate array -->
+       <arraySeparator>,</arraySeparator>
 	     
 		   <!-- Post process text after exectute jsoup query -->
 	     <textProcess>

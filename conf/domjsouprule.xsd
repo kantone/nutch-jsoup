@@ -84,12 +84,25 @@
                           <xs:enumeration value="attr" />
                           <xs:enumeration value="count" />
                           <xs:enumeration value="static" />
+                          <xs:enumeration value="joinfields" />
                         </xs:restriction>
                       </xs:simpleType>
                     </xs:element>
                     <xs:element name="attrname" type="xs:string" />
                     <xs:element name="staticval" type="xs:string" />
                     <xs:element name="multipleSeparator" type="xs:string"  default="|"/>
+
+                    <!-- separated from "," ex. title,tags -->
+                    <xs:element name="joinfields">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="fieldName" type="xs:string" maxOccurs="unbounded" />
+                          <xs:element name="separator" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+
+
 
                     <!-- trim,replace,split -->
                     <xs:element  name="textProcess">

@@ -74,7 +74,18 @@ public class DomJsoupIndexingFilter implements IndexingFilter {
 				  if(keyname.toString().startsWith(prefix)){
 					 int index =  keyname.toString().indexOf(prefix) + prefix.length();
 					 String newKey = keyname.toString().substring(index);
-					 doc.add(newKey, val);
+					 
+					 
+					 if(newKey.endsWith("|@")){
+						 newKey = newKey.replace("|@", "");
+						 String[] vals = val.split(",");
+						 for (String v : vals) {
+							 doc.add(newKey, v);
+						}
+					 }
+					 else doc.add(newKey, val);
+					 	
+					 
 					 LOG.info("Added to index field : " + newKey);
 				  }
 			  }

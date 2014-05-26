@@ -9,12 +9,15 @@ import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.nutch.indexer.domjsoup.conf.Rules;
@@ -191,8 +194,15 @@ public class DomJsoupParseFilter implements ParseFilter {
 								  }								 
 							  }
 							  
+							  //add array field
+							  if(entry.getReturnType().equals("joinfields") ){
+								  String joinVal= getJoinFields(entry,page);
+								  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(joinVal.getBytes()));
+							  }
 							  //add field
-							  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));							  
+							  else {								
+								  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));	
+							  }
 						  }
 					  }
 				  }
@@ -213,6 +223,33 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  }	
 		
 		return parse;
+	}
+	
+	/**
+	 * Join fields
+	 * @param entry
+	 * @param page
+	 * @return
+	 */
+	private String getJoinFields(org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry,WebPage page){
+		 String joinVal = "";
+		  try{
+			  for (String fieldName : entry.getJoinfields().getFieldName()) {
+				  for (Entry<Utf8, ByteBuffer> el : page.getMetadata().entrySet()) {
+					if((prefix + fieldName).equals(el.getKey().toString())){
+						joinVal +=  new String(el.getValue().array(),Charset.forName("UTF-8")) + entry.getJoinfields().getSeparator();
+						break;
+					}
+				  }				 							 
+			  }
+			  if(!joinVal.equals("")){
+				  joinVal = joinVal.substring(0,joinVal.lastIndexOf(entry.getJoinfields().getSeparator()));										 
+			  }			 
+		  }
+		  catch(Exception ex){
+			  LOG.error(ex.getMessage());
+		  }
+		  return joinVal;
 	}
 		
 	
@@ -292,7 +329,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  
 		  if(useText.equals(false)){
 			  //set value
-			  if(rule.getReturnType().equals("text"))
+			  if(rule.getReturnType().equals("text") || rule.getReturnType().equals("array"))
 				  val = el.text();
 			  else if (rule.getReturnType().equals("html"))
 				  val = el.html();
