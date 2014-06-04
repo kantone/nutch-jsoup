@@ -14,6 +14,15 @@
          <customVal>NA</customVal>
        </nothingFoundAction>
 
+	    <!-- Go back to n parent(goBackParentsNumbers) from Elements found by jsoupquery
+		and execute a new query (the value is also processed with "textProcess")
+		-->
+	    <moveToParent>
+         <enabled>true</enabled>
+         <goBackParentsNumbers>3</goBackParentsNumbers>
+         <jsoupquery>div.bidCard-ft div.bidCard-bidInfo</jsoupquery>
+		</moveToParent>
+	   
        <!-- if=true process each element found and join text with separator(multipleSeparator) -->
        <!-- 
        <isMultiple>false</isMultiple>

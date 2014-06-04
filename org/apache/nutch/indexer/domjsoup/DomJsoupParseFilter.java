@@ -327,6 +327,14 @@ public class DomJsoupParseFilter implements ParseFilter {
 	  private String parseRule(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule,Boolean useText,String text){	  
 		  String val = "";
 		  
+		  //Move to parent
+		  if(rule.getMoveToParent() != null){
+			  if(rule.getMoveToParent().isEnabled()){
+				 Element el2 =  el.parents().get(rule.getMoveToParent().getGoBackParentsNumbers());
+				 el = this.parse(el2.html(),rule.getMoveToParent().getJsoupquery());
+			  }			  
+		  }
+		  
 		  if(useText.equals(false)){
 			  //set value
 			  if(rule.getReturnType().equals("text") || rule.getReturnType().equals("array"))
@@ -350,6 +358,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  val = this.equalNotEqualCheck(val,rule.getEqualcheckBeforeTextProcess());
 		  }
 		 
+		    
 		  
 		  org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess =  rule.getTextProcess();	  
 		  if(textProcess != null){
@@ -505,14 +514,14 @@ public class DomJsoupParseFilter implements ParseFilter {
 						  M = "1";
 					  if(y.equals(""))
 						  y = "1970";
-					  if(d.equals(""))
+					  if(k.equals(""))
 						  k = "00";
-					  if(d.equals(""))
+					  if(m.equals(""))
 						  m = "00";
-					  if(d.equals(""))
+					  if(s.equals(""))
 						  s = "00";
 					  
-					  GregorianCalendar gr = new GregorianCalendar(Integer.parseInt(y),Integer.parseInt(M),Integer.parseInt(d),Integer.parseInt(k),Integer.parseInt(m),Integer.parseInt(s));
+					  GregorianCalendar gr = new GregorianCalendar(Integer.parseInt(y.trim()),Integer.parseInt(M.trim()),Integer.parseInt(d.trim()),Integer.parseInt(k.trim()),Integer.parseInt(m.trim()),Integer.parseInt(s.trim()));
 					  val = dt.format(gr.getTime());
 				  }
 				  else if(dtp.getType().equals("splitPatternFromNow")){
@@ -525,11 +534,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 						  M = "0";
 					  if(y.equals(""))
 						  y = "0";
-					  if(d.equals(""))
+					  if(k.equals(""))
 						  k = "0";
-					  if(d.equals(""))
+					  if(m.equals(""))
 						  m = "0";
-					  if(d.equals(""))
+					  if(s.equals(""))
 						  s = "0";
 					  
 					  if(!d.equals(""))

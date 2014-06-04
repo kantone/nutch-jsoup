@@ -53,11 +53,24 @@
                       </xs:complexType>
                     </xs:element>
 
+                    <!-- move element to parent -->
+                    <xs:element  name="moveToParent">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="enabled" type="xs:boolean"  default="false" />
+                          <xs:element name="goBackParentsNumbers" type="xs:int" />
+                          <xs:element name="jsoupquery" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+
+                    <!-- join multiple values -->
                     <xs:element name="isMultiple" type="xs:boolean" default="false" />
-                    
-                    <xs:element name="equalcheckBeforeTextProcess" type="equalcheck" />              
-                                
-                    
+
+                    <!-- set value before fetch -->
+                    <xs:element name="equalcheckBeforeTextProcess" type="equalcheck" />
+
+                    <!-- elastic research value -->
                     <xs:element name="elastic">
                       <xs:complexType>
                         <xs:sequence>
