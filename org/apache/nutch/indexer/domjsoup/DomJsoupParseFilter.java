@@ -639,6 +639,16 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  val = e.getReplaceval();
 			  }
 		  }	 
+		  else if (e.getType().equals("lengthGT")){
+			  if(val.length() > e.getLengthtocheck()){
+				  val = e.getReplaceval();
+			  }
+		  }	 
+		  else if (e.getType().equals("lengthLT")){
+			  if(val.length() < e.getLengthtocheck()){
+				  val = e.getReplaceval();
+			  }
+		  }	 
 		  return val;
 	  }
 	  

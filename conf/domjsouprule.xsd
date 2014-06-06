@@ -297,6 +297,7 @@
 
   <xs:complexType  name="equalcheck">
     <xs:sequence>
+      <xs:element name="lengthtocheck" type="xs:int" />
       <xs:element name="valtocheck" type="xs:string" />
       <xs:element name="replaceval" type="xs:string" />
       <xs:element  name="type">
@@ -304,6 +305,8 @@
           <xs:restriction base="xs:string">
             <xs:enumeration value="equal" />
             <xs:enumeration value="notequal" />
+            <xs:enumeration value="lengthGT" />
+            <xs:enumeration value="lengthLT" />
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
