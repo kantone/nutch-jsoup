@@ -35,10 +35,24 @@
               <xs:element name="fields" maxOccurs="unbounded">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element name="fieldname" type="xs:string" />
+                    <xs:element name="fieldname" type="xs:string" />                   
+                   
 
                     <!-- can be multiple with | separator like "jssoupquery1|jssoupquery2 (first value found that is not nothing will be processed) -->
                     <xs:element name="jsoupquery" type="xs:string" />
+                    
+                                      
+                    <!-- if jsoupquery result contain a value execute TextProcessAlternative instead of default textProcess by id-->
+                    <xs:element  name="textProcessAlternativeCheck"  maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                         	 <xs:element name="enable" type="xs:boolean" default="false"  /> 
+                    		<xs:element name="containsVal" type="xs:string"  />
+                    		 <xs:element name="referenceId" type="xs:string"  />  
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                                  
                     
                     <!-- extract data from url using textProcess and bybass jsoup query -->
                     <xs:element name="processingUrl" type="xs:boolean" default="false" />
@@ -118,8 +132,37 @@
 
 
                     <!-- trim,replace,split -->
-                    <xs:element  name="textProcess">
+                    <xs:element  name="textProcess" type="textP" />          
+                    
+                     <!-- textprocessAlternative -->
+                     <xs:element name="textProcessAlternative" maxOccurs="unbounded">
                       <xs:complexType>
+                        <xs:sequence>
+                          <xs:element  name="textProcess" type="textP" /> 
+                          <xs:element name="id" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    
+                               
+  					  
+
+                    <xs:element name="equalcheckAfterTextProcess" type="equalcheck" />
+
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+
+
+
+            </xs:sequence>
+          </xs:complexType>
+
+   
+  </xs:element>
+
+<xs:complexType  name="textP">
+
                         <xs:sequence>
 
                           <!-- trim-->
@@ -252,6 +295,8 @@
                                                             index => 4 => may as M                                                    
                                      splitPatternFromNow : add date from now (for. eg 6 days, 23 hours left)                                    
                                             -->
+                                            
+                                <xs:element name="splitPatternFromNowSubtract" type="xs:boolean"  default="false"/>
                                 <xs:element  name="type">
                                   <xs:simpleType>
                                     <xs:restriction base="xs:string">
@@ -275,25 +320,10 @@
                             </xs:complexType>
                           </xs:element>
                           
-                          
-                        </xs:sequence>
-                      </xs:complexType>
+                      
+</xs:sequence>
+</xs:complexType>
 
-                    </xs:element>
-
-                    <xs:element name="equalcheckAfterTextProcess" type="equalcheck" />
-
-                  </xs:sequence>
-                </xs:complexType>
-              </xs:element>
-
-
-
-            </xs:sequence>
-          </xs:complexType>
-
-   
-  </xs:element>
 
   <xs:complexType  name="equalcheck">
     <xs:sequence>

@@ -8,6 +8,13 @@
        <!-- set if process url text instead of use jsoup query-->
        <processingUrl>false</processingUrl>
 
+       <!-- if jsoupquery result contain a value execute TextProcessAlternative instead of default textProcess by reference id-->
+	   <textProcessAlternativeCheck>
+		    <enable>false</enable>
+       <containsVal>demo</containsVal>
+       <referenceId>1</referenceId>
+	   </textProcessAlternativeCheck>
+
        <!-- set custom value if nothing is found-->
        <nothingFoundAction>
          <setcustomVal>false</setcustomVal>
@@ -158,9 +165,21 @@
          </datePattern>
           -->
 	     </textProcess>
-		 
-		 
-		 <!-- check if value is equal or not equal and override to an stastic value after process text-->
+
+
+       <!-- text proce rule alternative executed instead of default if textProcessAlternativeCheck is enabled and string was found  -->
+       <textProcessAlternative>
+         <id>1</id>
+         <textProcess>
+           <!--
+           ..............
+           -->           
+         </textProcess>
+       </textProcessAlternative>
+       
+      
+
+       <!-- check if value is equal or not equal and override to an stastic value after process text-->
 		 <!-- For e.g if val=1000 set val=thousand -->
 		 <!-- lengthGT : if "val" length "lengthtocheck" set val=replaceval>  -->
      <!-- Type : equal,notequal,lengthGT,lengthLT !-->

@@ -23,15 +23,17 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.nutch.indexer.domjsoup.conf.Rules;
 import org.apache.nutch.indexer.domjsoup.rule.Equalcheck;
 import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.Elastic;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Append;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Contains;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.DatePattern;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.DatePattern.IndexDef;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.PercentCalculate;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Replace;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Split;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Substring;
-import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess.Trim;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcessAlternative;
+import org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcessAlternativeCheck;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Append;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Contains;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.DatePattern;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.DatePattern.IndexDef;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.PercentCalculate;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Replace;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Split;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Substring;
+import org.apache.nutch.indexer.domjsoup.rule.TextP.Trim;
 import org.apache.nutch.parse.HTMLMetaTags;
 import org.apache.nutch.parse.Parse;
 import org.apache.nutch.parse.ParseFilter;
@@ -73,7 +75,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	private org.apache.nutch.indexer.domjsoup.rule.Parse parse  = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.Rule rule = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.ElasticInfo elasticInfo = null;
-	
+	private String currentFieldName ="";
 	
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
@@ -115,7 +117,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 					  
 					  LOG.info("Parse " + this.parse.getFields().size() + " fields");
 					  for (org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry : this.parse.getFields()) {
-						
+						 this.currentFieldName = entry.getFieldname();
 						  boolean processStandard = true;
 						  
 						  //ElasticCase						  
@@ -136,7 +138,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 										  Log.info("Find html into elasticSearch and parse it with this rule");
 										  String val = "";
 										  Elements el = this.parse(htmlFromElastic, entry.getJsoupquery());
-										  if(el != null){
+										  if(el != null){											  
 											  val= parseRule(el,entry,false,"");
 										  }
 										  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
@@ -177,7 +179,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 												  if(entry.isIsMultiple()){													 
 													  val= multipleExecution(el,entry,val);
 												  }
-												  else{
+												  else{													  
 													  val= parseRule(el,entry,false,"");
 												  }		
 												  break;
@@ -215,6 +217,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  }
 		  }
 		  catch(Exception ex){
+			  LOG.error("Field : " + this.currentFieldName);
 			  LOG.error("Error on url " + url);
 			  LOG.error(ex.getMessage());		  
 			  String stack = org.apache.commons.lang.exception.ExceptionUtils.getStackTrace(ex);
@@ -247,6 +250,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  }			 
 		  }
 		  catch(Exception ex){
+			  LOG.error("Field : " + this.currentFieldName);
 			  LOG.error(ex.getMessage());
 		  }
 		  return joinVal;
@@ -329,9 +333,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  
 		  //Move to parent
 		  if(rule.getMoveToParent() != null){
-			  if(rule.getMoveToParent().isEnabled()){
-				 Element el2 =  el.parents().get(rule.getMoveToParent().getGoBackParentsNumbers());
-				 el = this.parse(el2.html(),rule.getMoveToParent().getJsoupquery());
+			  if(rule.getMoveToParent().isEnabled()){	
+				 if(el.parents().size() >= rule.getMoveToParent().getGoBackParentsNumbers()){
+					 Element el2 =  el.parents().get(rule.getMoveToParent().getGoBackParentsNumbers());
+					 el = this.parse(el2.html(),rule.getMoveToParent().getJsoupquery());
+				 }
 			  }			  
 		  }
 		  
@@ -358,9 +364,10 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  val = this.equalNotEqualCheck(val,rule.getEqualcheckBeforeTextProcess());
 		  }
 		 
-		    
-		  
-		  org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess =  rule.getTextProcess();	  
+		  //Check if load text process alternative if val contains
+		  org.apache.nutch.indexer.domjsoup.rule.TextP textProcess  = this.getTextProcess(val, rule);
+   
+  
 		  if(textProcess != null){
 			 
 			  //regex
@@ -433,6 +440,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 					  val = String.valueOf(res);
 				  }
 				  catch(Exception e){
+					  LOG.error("Field : " + this.currentFieldName);
 					  LOG.error(e.getMessage() + " " + e.getStackTrace());
 				  }
 				  
@@ -440,8 +448,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 					  val = val + "%";
 				  }
 			  }
-			  
-			  //Date Pattern
+			  			 
 			  val = datePattern(val,textProcess);
 			  			
 			  //Trim
@@ -470,12 +477,42 @@ public class DomJsoupParseFilter implements ParseFilter {
 	  }
 	  
 	  /**
+	   * Find an alternative text Process else return default
+	   * @param val
+	   * @param textProcess
+	   * @param rule
+	   * @return
+	   */
+	  private org.apache.nutch.indexer.domjsoup.rule.TextP getTextProcess(String val,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule){
+		  org.apache.nutch.indexer.domjsoup.rule.TextP textProcess = rule.getTextProcess();
+		  if(rule.getTextProcessAlternativeCheck() != null){
+			  for (TextProcessAlternativeCheck t : rule.getTextProcessAlternativeCheck()) {
+				boolean brk = false;
+				if(t.isEnable() && val.contains(t.getContainsVal())){
+					if(rule.getTextProcessAlternative() != null){
+						for(TextProcessAlternative a : rule.getTextProcessAlternative()){
+							if(a.getId().equals(t.getReferenceId())){
+								textProcess = a.getTextProcess();
+								brk = true;
+								break;								
+							}
+						}
+					}	
+				}
+				if(brk)
+					break;
+			}
+		  }
+		  return textProcess;
+	  }
+	  
+	  /**
 	   * Execute date convertion pattern
 	   * @param val
 	   * @param textProcess
 	   * @return
 	   */
-	  private String datePattern(String val, org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess){
+	  private String datePattern(String val, org.apache.nutch.indexer.domjsoup.rule.TextP textProcess){
 		  DatePattern dtp = textProcess.getDatePattern();
 		  if(dtp != null && !val.equals("")){
 			  String d="";
@@ -487,7 +524,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  try{
 				  String[] explode = val.split(dtp.getSeparator());
 				  for (IndexDef def : dtp.getIndexDef()) {
-					String p = explode[def.getIndex()];
+					String p = explode[def.getIndex()].trim();
 					String letter = def.getDateLetter();
 					if(letter.equals("d"))
 						d = p;
@@ -541,31 +578,39 @@ public class DomJsoupParseFilter implements ParseFilter {
 					  if(s.equals(""))
 						  s = "0";
 					  
+					  
+					  int c = 1;
+					  if(dtp.isSplitPatternFromNowSubtract()){
+						  c=-1;						  
+					  }
+					  
 					  if(!d.equals(""))
-						  gr.add(Calendar.DAY_OF_MONTH,Integer.parseInt(d));
+						  gr.add(Calendar.DAY_OF_MONTH,Integer.parseInt(d)*c);
 					  
 					  if(!M.equals(""))
-						  gr.add(Calendar.MONTH,Integer.parseInt(M));
+						  gr.add(Calendar.MONTH,Integer.parseInt(M)*c);
 					  
 					  if(!y.equals(""))
-						  gr.add(Calendar.YEAR,Integer.parseInt(y));
+						  gr.add(Calendar.YEAR,Integer.parseInt(y)*c);
 					  
 					  if(!k.equals(""))
-						  gr.add(Calendar.HOUR,Integer.parseInt(k));
+						  gr.add(Calendar.HOUR,Integer.parseInt(k)*c);
 					  
 					  if(!m.equals(""))
-						  gr.add(Calendar.MINUTE,Integer.parseInt(m));
+						  gr.add(Calendar.MINUTE,Integer.parseInt(m)*c);
 					  
 					  if(!s.equals(""))
-						  gr.add(Calendar.SECOND,Integer.parseInt(s));
-					  						
+						  gr.add(Calendar.SECOND,Integer.parseInt(s)*c);
+				  
+					  
 					  val =  dt.format(gr.getTime());
 				  }
 				  
 				
 			  }
 			  catch(Exception e){
-				  LOG.error(e.getMessage() + " " + e.getStackTrace());
+				  LOG.error("Field : " + this.currentFieldName);
+				  LOG.error(e.getMessage());
 				  val = "";
 			  }
 		  }
@@ -578,7 +623,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	   * @param textProcess
 	   * @return
 	   */
-	  private String split(String val, org.apache.nutch.indexer.domjsoup.rule.Parse.Fields.TextProcess textProcess){
+	  private String split(String val,org.apache.nutch.indexer.domjsoup.rule.TextP textProcess){		 
 		  try{
 			  List<Split> splits = textProcess.getSplit();
 			  for (Split split : splits) {
@@ -617,6 +662,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  }
 		  }
 		  catch(Exception ex){
+			  LOG.error("Field : " + this.currentFieldName);
 			  LOG.error(ex.getMessage());
 		  }
 		  return val;
@@ -673,6 +719,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			    	
 				} 
 				catch (Exception e) {
+					LOG.error("Field : " + this.currentFieldName);
 					e.printStackTrace();
 					return null;
 				}
@@ -721,6 +768,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  
 
 		} catch (JAXBException e) {
+			LOG.error("Field : " + this.currentFieldName);
 			LOG.error(e.getMessage());
 			e.printStackTrace();
 			return;
