@@ -80,6 +80,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
 		
+		 		
 		LOG.info("DomJsoupParseFilter ParseFilter plugin");
 
 		 try{
@@ -106,7 +107,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  setXpathsRuleFile(url);	 
 				  if(!this.rule.equals(null)){
 					  
-					  if(this.rule.isAddhtmlsourcefield()){		
+					  if(this.rule.isAddhtmlsourcefield()){	
 						  page.putToMetadata(getNewFieldKey("html"),  ByteBuffer.wrap(html.getBytes()));
 					  }
 					  
@@ -130,7 +131,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 								  if(elastic.getElasticprocesstype().equals("setFieldValue")){
 									  String val = this.elasticQueryByUrl(elastic.getFindUrlValue(),this.elasticInfo.getClusterName(),this.elasticInfo.getHostNameOrIp(),this.elasticInfo.getElasticPort(),this.elasticInfo.getIndex(),elastic.getFieldName());
 									  Log.info("Setting " + entry.getFieldname() + " from elasticSearch query result");
-									  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
+									  this.put(val, entry, page);
 								  }
 								  if(elastic.getElasticprocesstype().equals("processFieldJsoup")){
 									  String htmlFromElastic = this.elasticQueryByUrl(elastic.getFindUrlValue(),this.elasticInfo.getClusterName(),this.elasticInfo.getHostNameOrIp(),this.elasticInfo.getElasticPort(),this.elasticInfo.getIndex(),elastic.getFieldName());
@@ -141,11 +142,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 										  if(el != null){											  
 											  val= parseRule(el,entry,false,"");
 										  }
-										  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
+										  this.put(val, entry, page);
 									  }
 									  else {
-										  Log.warn("Cannot find html value from elasticsearch query");
-										  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap("".getBytes()));										  
+										  Log.warn("Cannot find html value from elasticsearch query");	
+										  this.put("", entry, page);
 									  }
 								  }
 							  }
@@ -199,11 +200,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 							  //add array field
 							  if(entry.getReturnType().equals("joinfields") ){
 								  String joinVal= getJoinFields(entry,page);
-								  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(joinVal.getBytes()));
+								  this.put(joinVal, entry, page);
 							  }
 							  //add field
-							  else {								
-								  page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));	
+							  else {
+								  this.put(val, entry, page);
 							  }
 						  }
 					  }
@@ -226,6 +227,42 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  }	
 		
 		return parse;
+	}
+	
+	/**
+	 * Put to medatada
+	 * @param val
+	 */
+	private WebPage  put(String val,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry, WebPage page ){
+		if(entry.getConvertToType() != null){
+			 if(entry.getConvertToType().equals("empty")){
+				 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap("".getBytes()));
+			 }
+			 //check if int else set = 0
+			 else if(entry.getConvertToType().equals("integer")){
+				 	try{
+				 		Integer v = Integer.parseInt(val);
+					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
+					 }catch(NumberFormatException e){
+						 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
+					 }				
+			 }
+			//check if float else set = 0
+			 else if(entry.getConvertToType().equals("float")){
+				 	try{
+				 		Float v = Float.parseFloat(val);
+					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
+					 }catch(NumberFormatException e){
+						 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
+					 }				
+			 }
+			 else if(entry.getConvertToType().equals("float")){
+				 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
+			 }
+		 }
+		else page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
+		
+		return page;
 	}
 	
 	/**
@@ -466,12 +503,15 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  }
 			  }
 			  
+			  
+			  
 		  }
 		  
 		  
 		  if(rule.getEqualcheckAfterTextProcess() != null){
 			  val = this.equalNotEqualCheck(val,rule.getEqualcheckAfterTextProcess());
 		  }
+		   
 		  
 		  return val;
 	  }

@@ -166,6 +166,8 @@
           -->
 	     </textProcess>
 
+		 <!-- force to get value to a specific type. Else = 0 -->
+		 <convertToType>integer</convertToType>
 
        <!-- text proce rule alternative executed instead of default if textProcessAlternativeCheck is enabled and string was found  -->
        <textProcessAlternative>

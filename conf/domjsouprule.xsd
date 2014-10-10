@@ -149,6 +149,17 @@
 
                     <xs:element name="equalcheckAfterTextProcess" type="equalcheck" />
 
+                    <xs:element  name="convertToType">
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="none" />
+                          <xs:enumeration value="empty" />
+                          <xs:enumeration value="integer" />
+                          <xs:enumeration value="float" />
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:element>
+                                      
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>

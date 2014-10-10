@@ -9,8 +9,8 @@
     </elasticInfo>
     
     <rule>
-        <urlcontain>http://stackoverflow.com</urlcontain>
-        <file>conf/domjsoup-stackoverflow-test.xml</file>    
+        <urlcontain>http://stackoverflow.com/questions</urlcontain>
+        <file>conf/stackoverflow.xml</file>    
         <addhtmlsourcefield>false</addhtmlsourcefield>    
     </rule>
     
@@ -20,10 +20,22 @@
         <addhtmlsourcefield>false</addhtmlsourcefield>    
     </rule>
      <rule>
-        <urlcontain>http://nj</urlcontain>
+        <urlcontain>https://www.elance.com/j/</urlcontain>
+        <file>conf/elance.xml</file>    
+        <addhtmlsourcefield>false</addhtmlsourcefield>    
+    </rule>
+     
+     <rule>
+        <urlcontain>http://nj2/elance</urlcontain>
+        <file>conf/elance.xml</file>    
+        <addhtmlsourcefield>false</addhtmlsourcefield>    
+    </rule>
+     <rule>
+        <urlcontain>http://nj2/freelancer</urlcontain>
         <file>conf/freelancer.xml</file>    
         <addhtmlsourcefield>false</addhtmlsourcefield>    
     </rule>
+    
     
     <!-- 
      <xpath>
