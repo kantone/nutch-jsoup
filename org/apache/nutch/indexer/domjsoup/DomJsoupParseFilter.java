@@ -4,8 +4,10 @@ import java.io.File;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +82,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
 		
-		 		
 		LOG.info("DomJsoupParseFilter ParseFilter plugin");
-
 		 try{
 						  
 			  URL u  = this.conf.getResource(conffileName);
@@ -235,11 +235,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 	 */
 	private WebPage  put(String val,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry, WebPage page ){
 		if(entry.getConvertToType() != null){
-			 if(entry.getConvertToType().equals("empty")){
+			 if(entry.getConvertToType().getType().equals("empty")){
 				 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap("".getBytes()));
 			 }
 			 //check if int else set = 0
-			 else if(entry.getConvertToType().equals("integer")){
+			 else if(entry.getConvertToType().getType().equals("integer")){
 				 	try{
 				 		Integer v = Integer.parseInt(val);
 					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
@@ -248,7 +248,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 					 }				
 			 }
 			//check if float else set = 0
-			 else if(entry.getConvertToType().equals("float")){
+			 else if(entry.getConvertToType().getType().equals("float")){
 				 	try{
 				 		Float v = Float.parseFloat(val);
 					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
@@ -256,8 +256,24 @@ public class DomJsoupParseFilter implements ParseFilter {
 						 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
 					 }				
 			 }
-			 else if(entry.getConvertToType().equals("float")){
-				 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
+			 else if(entry.getConvertToType().getType().equals("date")){	
+				 //try parse and set date
+				 try {
+					SimpleDateFormat parserSDF=new SimpleDateFormat(entry.getConvertToType().getDateFormatToCheck());					 
+					Date dt = parserSDF.parse(val);
+					SimpleDateFormat toDf=new SimpleDateFormat(entry.getConvertToType().getDateConvertToFormat());					 
+					String _data = toDf.format(dt);					
+					page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(_data.getBytes()));
+				} 
+				 //Set date default
+				 catch (ParseException e) {
+					 try{
+						 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(entry.getConvertToType().getDefaultDate().getBytes()));
+					 }
+					 catch(Exception e1){
+						 
+					 }
+				}
 			 }
 		 }
 		else page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));

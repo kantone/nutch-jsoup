@@ -166,8 +166,7 @@
           -->
 	     </textProcess>
 
-		 <!-- force to get value to a specific type. Else = 0 -->
-		 <convertToType>integer</convertToType>
+		
 
        <!-- text proce rule alternative executed instead of default if textProcessAlternativeCheck is enabled and string was found  -->
        <textProcessAlternative>
@@ -179,7 +178,13 @@
          </textProcess>
        </textProcessAlternative>
        
-      
+       <!-- force to get value to a specific type. Else = 0 -->
+		<convertToType>
+			<type>date</type>
+			<dateFormatToCheck>MM/dd/yyyy HH:mm:ss</dateFormatToCheck>
+			<dateConvertToFormat>MM/dd/yyyy HH:mm:ss</dateConvertToFormat>
+			<defaultDate>01/01/2999 00:00:00</defaultDate>
+		</convertToType>
 
        <!-- check if value is equal or not equal and override to an stastic value after process text-->
 		 <!-- For e.g if val=1000 set val=thousand -->

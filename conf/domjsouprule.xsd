@@ -150,16 +150,25 @@
                     <xs:element name="equalcheckAfterTextProcess" type="equalcheck" />
 
                     <xs:element  name="convertToType">
-                      <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                          <xs:enumeration value="none" />
-                          <xs:enumeration value="empty" />
-                          <xs:enumeration value="integer" />
-                          <xs:enumeration value="float" />
-                        </xs:restriction>
-                      </xs:simpleType>
-                    </xs:element>
-                                      
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="dateFormatToCheck" type="xs:string" />
+                          <xs:element name="dateConvertToFormat" type="xs:string" />
+                          <xs:element name="defaultDate" type="xs:string" />
+                          <xs:element  name="type">
+                            <xs:simpleType>
+                              <xs:restriction base="xs:string">
+                                <xs:enumeration value="none" />
+                                <xs:enumeration value="empty" />
+                                <xs:enumeration value="integer" />
+                                <xs:enumeration value="float" />
+                                <xs:enumeration value="date" />
+                              </xs:restriction>
+                            </xs:simpleType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>                      
+                    </xs:element>                                      
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>
