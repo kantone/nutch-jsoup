@@ -317,7 +317,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	 * @param val
 	 * @return
 	 */
-	private String multipleExecution(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry,String val){
+	private String multipleExecution(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry,String val) throws Exception{
 		 for (Element element : el) {	
 			  String txt = element.text();
 			  
@@ -381,7 +381,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 	   * @param rule
 	   * @return
 	   */
-	  private String parseRule(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule,Boolean useText,String text){	  
+	  private String parseRule(Elements el,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields rule,Boolean useText,String text) throws Exception{	  
 		  String val = "";
 		  
 		  //Move to parent
@@ -426,10 +426,15 @@ public class DomJsoupParseFilter implements ParseFilter {
 			  //regex
 			  if(textProcess.getRegex() != null){
 				  if(!textProcess.getRegex().equals("")){
-					  Pattern pattern = Pattern.compile(textProcess.getRegex());
-					  Matcher match = pattern.matcher(val);
-					  match.find();
-					  val = match.group();
+					  try{
+						  Pattern pattern = Pattern.compile(textProcess.getRegex());
+						  Matcher match = pattern.matcher(val);
+						  match.find();
+						  val = match.group();
+					  }
+					  catch(Exception e){
+						  e.printStackTrace();
+					  }
 				  }
 			  }
 			  
