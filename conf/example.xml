@@ -124,7 +124,8 @@
 			 
 			 <!-- perform regex match -->
        
-			 <regex></regex>
+			 <regexbefore></regexbefore>
+			 <regexafter></regexafter>
 
          <!-- caclulate percent value (for. eg extracted 4 on totalValue=10 = 40%)  -->
          <!--

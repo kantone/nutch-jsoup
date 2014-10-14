@@ -278,7 +278,8 @@
                           </xs:element>
 
                           <!-- regex -->
-                          <xs:element  name="regex" type="xs:string" />                         
+                          <xs:element  name="regexbefore" type="xs:string" />
+                          <xs:element  name="regexafter" type="xs:string" />
 
                           <!-- percent calculate from extracted value (for. eg extracted 4 on totalValue=10 = 40% -->
                           <xs:element  name="percentCalculate">

@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -81,6 +82,23 @@ public class DomJsoupParseFilter implements ParseFilter {
 	
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
+		
+		//test data
+		/*SimpleDateFormat parserSDF=new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss", Locale.ENGLISH);					 
+		Date dt;
+		try {
+			String d = parserSDF.format(new Date());
+			//dt = parserSDF.parse("mar, 14 ott 2014 11:05:38 +0200");
+			dt = parserSDF.parse("Tue, 14 Oct 2014 03:49:57");
+			SimpleDateFormat toDf=new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");					 
+			String _data = toDf.format(dt);		
+			String tmp ="";
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+					
+		
 		
 		LOG.info("DomJsoupParseFilter ParseFilter plugin");
 		 try{
@@ -259,9 +277,9 @@ public class DomJsoupParseFilter implements ParseFilter {
 			 else if(entry.getConvertToType().getType().equals("date")){	
 				 //try parse and set date
 				 try {
-					SimpleDateFormat parserSDF=new SimpleDateFormat(entry.getConvertToType().getDateFormatToCheck());					 
+					SimpleDateFormat parserSDF=new SimpleDateFormat(entry.getConvertToType().getDateFormatToCheck(), Locale.ENGLISH);					 
 					Date dt = parserSDF.parse(val);
-					SimpleDateFormat toDf=new SimpleDateFormat(entry.getConvertToType().getDateConvertToFormat());					 
+					SimpleDateFormat toDf=new SimpleDateFormat(entry.getConvertToType().getDateConvertToFormat(), Locale.ENGLISH);					 
 					String _data = toDf.format(dt);					
 					page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(_data.getBytes()));
 				} 
@@ -424,16 +442,16 @@ public class DomJsoupParseFilter implements ParseFilter {
 		  if(textProcess != null){
 			 
 			  //regex
-			  if(textProcess.getRegex() != null){
-				  if(!textProcess.getRegex().equals("")){
+			  if(textProcess.getRegexbefore() != null){
+				  if(!textProcess.getRegexbefore().equals("")){
 					  try{
-						  Pattern pattern = Pattern.compile(textProcess.getRegex());
+						  Pattern pattern = Pattern.compile(textProcess.getRegexbefore());
 						  Matcher match = pattern.matcher(val);
 						  match.find();
 						  val = match.group();
 					  }
 					  catch(Exception e){
-						  e.printStackTrace();
+						  //e.printStackTrace();
 					  }
 				  }
 			  }
@@ -524,6 +542,21 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  }
 			  }
 			  
+			//regex
+			  if(textProcess.getRegexafter() != null){
+				  if(!textProcess.getRegexafter().equals("")){
+					  try{
+						  Pattern pattern = Pattern.compile(textProcess.getRegexafter());
+						  Matcher match = pattern.matcher(val);
+						  match.find();
+						  val = match.group();
+					  }
+					  catch(Exception e){
+						  //e.printStackTrace();
+					  }
+				  }
+			  }
+			  
 			  
 			  
 		  }
@@ -602,7 +635,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  }
 				  
 				  
-				  SimpleDateFormat dt = new SimpleDateFormat(dtp.getDateFormat());				  
+				  SimpleDateFormat dt = new SimpleDateFormat(dtp.getDateFormat(), Locale.ENGLISH);				  
 				  if(dtp.getType().equals("splitPattern")){
 					  
 					  //set defaults
