@@ -163,12 +163,18 @@
                                 <xs:enumeration value="integer" />
                                 <xs:enumeration value="float" />
                                 <xs:enumeration value="date" />
+                                <xs:enumeration value="currencyInt" />
+                                <xs:enumeration value="currencyFloat" />
                               </xs:restriction>
                             </xs:simpleType>
                           </xs:element>
                         </xs:sequence>
                       </xs:complexType>                      
-                    </xs:element>                                      
+                    </xs:element>    
+                    
+                   
+                    
+                                                      
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>

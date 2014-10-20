@@ -17,6 +17,19 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+        
+         <xs:element name="currencyconvert">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="csvfile" type="xs:string" />
+              <xs:element name="csvseparator" type="xs:string" />
+              <xs:element name="startFromRow" type="xs:int" default="0" />
+              <xs:element name="colIdNumber" type="xs:int" />
+              <xs:element name="colValueNumber" type="xs:int" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
 
         <xs:element name="rule" maxOccurs="unbounded">
 
@@ -28,6 +41,7 @@
               <xs:element name="urlcontain" type="xs:string" />
               <xs:element name="file" type="xs:string" default="conf/file.xml" />
               <xs:element name="addhtmlsourcefield" type="xs:boolean" default="1" />
+              <xs:element name="enablecurrencyconverter" type="xs:boolean" default="1" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

@@ -1,6 +1,9 @@
 package org.apache.nutch.indexer.domjsoup;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -9,18 +12,17 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.nutch.indexer.domjsoup.conf.Rules;
@@ -77,8 +79,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 	private String conffile;
 	private org.apache.nutch.indexer.domjsoup.rule.Parse parse  = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.Rule rule = null;
+	private org.apache.nutch.indexer.domjsoup.conf.Rules.Currencyconvert currencyconvert = null;
 	private org.apache.nutch.indexer.domjsoup.conf.Rules.ElasticInfo elasticInfo = null;
 	private String currentFieldName ="";
+	private boolean loadcurrency = true;
+	private  HashMap<String, Float> currencies = new HashMap<String, Float>();
 	
 	@Override
 	public Parse filter(String url, WebPage page, Parse parse,HTMLMetaTags metaTags, DocumentFragment doc) {
@@ -93,8 +98,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 			SimpleDateFormat toDf=new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");					 
 			String _data = toDf.format(dt);		
 			String tmp ="";
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
+		} catch (ParseException e) {			
 			e.printStackTrace();
 		}*/
 					
@@ -105,7 +109,8 @@ public class DomJsoupParseFilter implements ParseFilter {
 						  
 			  URL u  = this.conf.getResource(conffileName);
 			  this.conffile = u.getPath();
-			  LOG.info("conf file : " + this.conffile);
+			  LOG.info("conf file : " + this.conffile);		 
+			  
 			  		
 			  if(page.equals(null)){
 				  LOG.error("WebPage is null");
@@ -123,6 +128,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  String html = new String(k.array(),Charset.forName("UTF-8"));
 				  
 				  setXpathsRuleFile(url);	 
+				  loadCurrency();
 				  if(!this.rule.equals(null)){
 					  
 					  if(this.rule.isAddhtmlsourcefield()){	
@@ -149,7 +155,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 								  if(elastic.getElasticprocesstype().equals("setFieldValue")){
 									  String val = this.elasticQueryByUrl(elastic.getFindUrlValue(),this.elasticInfo.getClusterName(),this.elasticInfo.getHostNameOrIp(),this.elasticInfo.getElasticPort(),this.elasticInfo.getIndex(),elastic.getFieldName());
 									  Log.info("Setting " + entry.getFieldname() + " from elasticSearch query result");
-									  this.put(val, entry, page);
+									  this.put(val, entry, page,false,"");
 								  }
 								  if(elastic.getElasticprocesstype().equals("processFieldJsoup")){
 									  String htmlFromElastic = this.elasticQueryByUrl(elastic.getFindUrlValue(),this.elasticInfo.getClusterName(),this.elasticInfo.getHostNameOrIp(),this.elasticInfo.getElasticPort(),this.elasticInfo.getIndex(),elastic.getFieldName());
@@ -160,11 +166,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 										  if(el != null){											  
 											  val= parseRule(el,entry,false,"");
 										  }
-										  this.put(val, entry, page);
+										  this.put(val, entry, page,false,"");
 									  }
 									  else {
 										  Log.warn("Cannot find html value from elasticsearch query");	
-										  this.put("", entry, page);
+										  this.put("", entry, page,false,"");
 									  }
 								  }
 							  }
@@ -218,11 +224,11 @@ public class DomJsoupParseFilter implements ParseFilter {
 							  //add array field
 							  if(entry.getReturnType().equals("joinfields") ){
 								  String joinVal= getJoinFields(entry,page);
-								  this.put(joinVal, entry, page);
+								  this.put(joinVal, entry, page,false,"");
 							  }
 							  //add field
 							  else {
-								  this.put(val, entry, page);
+								  this.put(val, entry, page,false,"");
 							  }
 						  }
 					  }
@@ -247,34 +253,65 @@ public class DomJsoupParseFilter implements ParseFilter {
 		return parse;
 	}
 	
+	private void loadCurrency() throws IOException{
+		
+		 //Load currency Info
+		if(this.loadcurrency){
+			//load only if is enables
+			if(this.rule.isEnablecurrencyconverter()){
+				  BufferedReader br = new BufferedReader(new FileReader(this.currencyconvert.getCsvfile()));
+				  String line;
+				  int i=0;
+				  while ((line = br.readLine()) != null) {
+					  if(i >= this.currencyconvert.getStartFromRow()){
+						  String[] cols = line.split(this.currencyconvert.getCsvseparator());
+						  Float v = Float.parseFloat(cols[this.currencyconvert.getColValueNumber()]);
+						  this.currencies.put(cols[this.currencyconvert.getColIdNumber()], v);				  
+					  }
+					  i++;
+				  }
+				  br.close();
+			}
+		 
+		  this.loadcurrency= false;
+		  
+		}
+		
+	}
+	
 	/**
 	 * Put to medatada
 	 * @param val
 	 */
-	private WebPage  put(String val,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry, WebPage page ){
+	private WebPage  put(String val,org.apache.nutch.indexer.domjsoup.rule.Parse.Fields entry, WebPage page,boolean overrideType,String customType ){
 		if(entry.getConvertToType() != null){
-			 if(entry.getConvertToType().getType().equals("empty")){
+			
+			 String _type = entry.getConvertToType().getType();
+			 if(overrideType)
+				 _type = customType;
+			
+			 if(_type.equals("empty")){
 				 page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap("".getBytes()));
 			 }
 			 //check if int else set = 0
-			 else if(entry.getConvertToType().getType().equals("integer")){
+			 else if(_type.equals("integer")){
 				 	try{
-				 		Integer v = Integer.parseInt(val);
+				 		Integer v = new Double(val).intValue();
 					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
 					 }catch(NumberFormatException e){
 						 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
 					 }				
 			 }
 			//check if float else set = 0
-			 else if(entry.getConvertToType().getType().equals("float")){
+			 else if(_type.equals("float")){
 				 	try{
-				 		Float v = Float.parseFloat(val);
+				 		Float v = new Double(val).floatValue();
 					 	page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap(v.toString().getBytes()));
 					 }catch(NumberFormatException e){
 						 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
 					 }				
 			 }
-			 else if(entry.getConvertToType().getType().equals("date")){	
+			 else if(_type.equals("date")){	
 				 //try parse and set date
 				 try {
 					SimpleDateFormat parserSDF=new SimpleDateFormat(entry.getConvertToType().getDateFormatToCheck(), Locale.ENGLISH);					 
@@ -292,6 +329,50 @@ public class DomJsoupParseFilter implements ParseFilter {
 						 
 					 }
 				}
+			 }
+			 else if(_type.equals("currencyInt") || _type.equals("currencyFloat")){	
+				 
+				 //Find "previusly founded currency"
+				 Map<Utf8,ByteBuffer> metas = page.getMetadata();
+				 String thisCurrency = "";
+				 int f = 0;
+				 for (Utf8 b : metas.keySet()) {
+					 if(b.toString().equals("_js_jCurrency")){
+						 ByteBuffer x = (ByteBuffer)metas.values().toArray()[f];						 
+						 thisCurrency = new String(x.array(),Charset.forName("UTF-8"));
+						 break;
+					 }				 
+				 } 
+				 
+				 //find convert rate
+				 Float convertRate = (float) -1.0;
+				 if(!thisCurrency.equals("")){
+					 for (Entry<String, Float> entry1 : this.currencies.entrySet()) {
+				            if (entry1.getKey().equals(thisCurrency)) {
+				            	convertRate =  entry1.getValue();
+				            }
+				        }
+				 }
+				 
+				 //make conversion
+				 if(!convertRate.equals(-1.0)){
+					 //Convert to int value
+					 	try{
+					 		Float v = Float.parseFloat(val);
+					 		Float converted = v * convertRate;							 		
+				 		
+					 		if(_type.equals("currencyInt")){
+					 			this.put(converted.toString(),entry,page,true,"integer");
+					 		}
+					 		if(_type.equals("currencyFloat")){
+					 			this.put(converted.toString(),entry,page,true,"float");
+					 		}						 	
+						 }
+					 	 catch(NumberFormatException e){
+							 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
+						 }		
+				 } 
+					 
 			 }
 		 }
 		else page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
@@ -834,6 +915,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 				  Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();		  
 				  Rules config = (Rules) jaxbUnmarshaller.unmarshal(f);
 				  this.elasticInfo = config.getElasticInfo();
+				  this.currencyconvert = config.getCurrencyconvert();  
 				  
 				  for (org.apache.nutch.indexer.domjsoup.conf.Rules.Rule entry : config.getRule()) {
 						

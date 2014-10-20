@@ -7,41 +7,22 @@
         <elasticPort>9300</elasticPort>
         <index>index</index>
     </elasticInfo>
+	
+	 <currencyconvert>
+    	<csvfile>\var\data\currency.csv</csvfile>
+    	<csvseparator>,</csvseparator>
+    	<startFromRow>0</startFromRow>
+    	<colIdNumber>1</colIdNumber>
+    	<colValueNumber>2</colValueNumber>		
+    </currencyconvert>   
     
     <rule>
         <urlcontain>http://stackoverflow.com/questions</urlcontain>
         <file>conf/stackoverflow.xml</file>    
         <addhtmlsourcefield>false</addhtmlsourcefield>    
-    </rule>
-    
-     <rule>
-        <urlcontain>http://www.freelancer.com</urlcontain>
-        <file>conf/freelancer.xml</file>    
-        <addhtmlsourcefield>false</addhtmlsourcefield>    
-    </rule>
-     <rule>
-        <urlcontain>https://www.elance.com/j/</urlcontain>
-        <file>conf/elance.xml</file>    
-        <addhtmlsourcefield>false</addhtmlsourcefield>    
-    </rule>
-     
-     <rule>
-        <urlcontain>http://nj2/elance</urlcontain>
-        <file>conf/elance.xml</file>    
-        <addhtmlsourcefield>false</addhtmlsourcefield>    
-    </rule>
-     <rule>
-        <urlcontain>http://nj2/freelancer</urlcontain>
-        <file>conf/freelancer.xml</file>    
-        <addhtmlsourcefield>false</addhtmlsourcefield>    
+		<enablecurrencyconverter>false</enablecurrencyconverter>
     </rule>
     
     
-    <!-- 
-     <xpath>
-        <urlcontain>http://stackoverflow.com</urlcontain>
-        <file>conf/file.xml</file>        
-    </xpath>
-     -->
     
 </rules>
