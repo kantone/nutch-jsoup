@@ -369,7 +369,12 @@ public class DomJsoupParseFilter implements ParseFilter {
 					 		}
 					 		if(_type.equals("currencyFloat")){
 					 			this.put(converted.toString(),entry,page,true,"float");
-					 		}						 	
+					 		}		
+					 		
+					 		//put original value
+					 		String orFieldName = entry.getFieldname() + "_or";
+					 		page.putToMetadata(getNewFieldKey(orFieldName), ByteBuffer.wrap(val.getBytes()));
+					 		
 						 }
 					 	 catch(NumberFormatException e){
 							 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
