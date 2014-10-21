@@ -25,7 +25,7 @@
               <xs:element name="csvseparator" type="xs:string" />
               <xs:element name="startFromRow" type="xs:int" default="0" />
               <xs:element name="colIdNumber" type="xs:int" />
-              <xs:element name="colValueNumber" type="xs:int" />
+              <xs:element name="colValueNumber" type="xs:int" />             
             </xs:sequence>
           </xs:complexType>
         </xs:element>
@@ -42,6 +42,8 @@
               <xs:element name="file" type="xs:string" default="conf/file.xml" />
               <xs:element name="addhtmlsourcefield" type="xs:boolean" default="1" />
               <xs:element name="enablecurrencyconverter" type="xs:boolean" default="1" />
+               <!-- Must be generated before any call of currencyconvert -->
+              <xs:element name="currencyFieldName" type="xs:string" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

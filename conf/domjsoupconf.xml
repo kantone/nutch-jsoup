@@ -21,6 +21,7 @@
         <file>conf/stackoverflow.xml</file>    
         <addhtmlsourcefield>false</addhtmlsourcefield>    
 		<enablecurrencyconverter>false</enablecurrencyconverter>
+		<currencyFieldName>xCurrency</currencyFieldName>
     </rule>
     
     

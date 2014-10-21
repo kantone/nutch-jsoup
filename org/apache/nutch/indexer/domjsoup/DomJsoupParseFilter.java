@@ -336,12 +336,14 @@ public class DomJsoupParseFilter implements ParseFilter {
 				 Map<Utf8,ByteBuffer> metas = page.getMetadata();
 				 String thisCurrency = "";
 				 int f = 0;
-				 for (Utf8 b : metas.keySet()) {
-					 if(b.toString().equals("_js_jCurrency")){
+				 String field = "_js_" + this.rule.getCurrencyFieldName();				
+				 for (Utf8 b : metas.keySet()) {					 
+					 if(b.toString().equals(field)){						
 						 ByteBuffer x = (ByteBuffer)metas.values().toArray()[f];						 
 						 thisCurrency = new String(x.array(),Charset.forName("UTF-8"));
 						 break;
-					 }				 
+					 }
+					 f++;
 				 } 
 				 
 				 //find convert rate
@@ -355,14 +357,15 @@ public class DomJsoupParseFilter implements ParseFilter {
 				 }
 				 
 				 //make conversion
-				 if(!convertRate.equals(-1.0)){
+				 if(!convertRate.toString().equals("-1.0")){
 					 //Convert to int value
 					 	try{
 					 		Float v = Float.parseFloat(val);
 					 		Float converted = v * convertRate;							 		
 				 		
 					 		if(_type.equals("currencyInt")){
-					 			this.put(converted.toString(),entry,page,true,"integer");
+					 			int iconverted = Integer.parseInt(converted.toString());					 			
+					 			this.put(String.valueOf(iconverted),entry,page,true,"integer");
 					 		}
 					 		if(_type.equals("currencyFloat")){
 					 			this.put(converted.toString(),entry,page,true,"float");
@@ -372,7 +375,7 @@ public class DomJsoupParseFilter implements ParseFilter {
 							 page.putToMetadata(getNewFieldKey(entry.getFieldname()), ByteBuffer.wrap("0".getBytes()));
 						 }		
 				 } 
-					 
+				 else page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));	 
 			 }
 		 }
 		else page.putToMetadata(getNewFieldKey(entry.getFieldname()),  ByteBuffer.wrap(val.getBytes()));
